@@ -240,11 +240,11 @@ class VirtualizedList extends React.PureComponent<OptionalProps, Props, State> {
 
   /**
    * Scroll to a specific content pixel offset in the list.
-   * 
+   *
    * Param `offset` expects the offset to scroll to.
    * In case of `horizontal` is true, the offset is the x-value,
    * in any other case the offset is the y-value.
-   * 
+   *
    * Param `animated` (`true` by default) defines whether the list
    * should do an animation while scrolling.
    */
@@ -392,7 +392,7 @@ class VirtualizedList extends React.PureComponent<OptionalProps, Props, State> {
     last = Math.min(end, last);
     for (let ii = first; ii <= last; ii++) {
       const item = getItem(data, ii);
-      invariant(item, 'No item for index ' + ii);
+      invariant(item !== false, 'No item for index ' + ii);
       const key = keyExtractor(item, ii);
       if (stickyIndicesFromProps.has(ii + stickyOffset)) {
         stickyHeaderIndices.push(cells.length);
