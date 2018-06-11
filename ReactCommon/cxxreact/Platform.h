@@ -1,7 +1,4 @@
-// Copyright (c) 2004-present, Facebook, Inc.
-
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+// Copyright 2004-present Facebook. All Rights Reserved.
 
 #pragma once
 
@@ -9,31 +6,46 @@
 #include <memory>
 #include <string>
 
-#include <cxxreact/ReactMarker.h>
+#include <cxxreact/Executor.h>
+#include <cxxreact/MessageQueueThread.h>
 #include <jschelpers/JavaScriptCore.h>
-
-#ifndef RN_EXPORT
-#define RN_EXPORT __attribute__((visibility("default")))
-#endif
 
 namespace facebook {
 namespace react {
 
-namespace JSCNativeHooks {
+namespace ReactMarker {
+enum ReactMarkerId {
+  NATIVE_REQUIRE_START,
+  NATIVE_REQUIRE_STOP,
+  RUN_JS_BUNDLE_START,
+  RUN_JS_BUNDLE_STOP,
+  CREATE_REACT_CONTEXT_STOP,
+  JS_BUNDLE_STRING_CONVERT_START,
+  JS_BUNDLE_STRING_CONVERT_STOP,
+};
 
-using Hook = JSValueRef(*)(
-  JSContextRef ctx,
-  JSObjectRef function,
-  JSObjectRef thisObject,
-  size_t argumentCount,
-  const JSValueRef arguments[],
-  JSValueRef *exception);
-extern RN_EXPORT Hook loggingHook;
-extern RN_EXPORT Hook nowHook;
+using LogTaggedMarker = std::function<void(const ReactMarkerId, const char* tag)>;
+extern LogTaggedMarker logTaggedMarker;
 
-typedef void(*ConfigurationHook)(JSGlobalContextRef);
-extern RN_EXPORT ConfigurationHook installPerfHooks;
+extern void logMarker(const ReactMarkerId markerId);
 
+};
+
+namespace PerfLogging {
+using InstallNativeHooks = std::function<void(JSGlobalContextRef)>;
+extern InstallNativeHooks installNativeHooks;
+};
+
+namespace JSNativeHooks {
+  using Hook = JSValueRef (*) (
+      JSContextRef ctx,
+      JSObjectRef function,
+      JSObjectRef thisObject,
+      size_t argumentCount,
+      const JSValueRef arguments[],
+      JSValueRef *exception);
+  extern Hook loggingHook;
+  extern Hook nowHook;
 }
 
 } }

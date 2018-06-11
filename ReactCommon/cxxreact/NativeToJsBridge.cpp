@@ -1,26 +1,20 @@
-// Copyright (c) 2004-present, Facebook, Inc.
-
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+// Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "NativeToJsBridge.h"
+
+#ifdef WITH_FBSYSTRACE
+#include <fbsystrace.h>
+using fbsystrace::FbSystraceAsyncFlow;
+#endif
 
 #include <folly/json.h>
 #include <folly/Memory.h>
 #include <folly/MoveWrapper.h>
 
 #include "Instance.h"
-#include "JSBigString.h"
-#include "SystraceSection.h"
-#include "MethodCall.h"
-#include "MessageQueueThread.h"
 #include "ModuleRegistry.h"
-#include "RAMBundleRegistry.h"
-
-#ifdef WITH_FBSYSTRACE
-#include <fbsystrace.h>
-using fbsystrace::FbSystraceAsyncFlow;
-#endif
+#include "Platform.h"
+#include "SystraceSection.h"
 
 namespace facebook {
 namespace react {
@@ -95,17 +89,17 @@ NativeToJsBridge::~NativeToJsBridge() {
 }
 
 void NativeToJsBridge::loadApplication(
-    std::unique_ptr<RAMBundleRegistry> bundleRegistry,
+    std::unique_ptr<JSModulesUnbundle> unbundle,
     std::unique_ptr<const JSBigString> startupScript,
     std::string startupScriptSourceURL) {
   runOnExecutorQueue(
-      [bundleRegistryWrap=folly::makeMoveWrapper(std::move(bundleRegistry)),
+      [unbundleWrap=folly::makeMoveWrapper(std::move(unbundle)),
        startupScript=folly::makeMoveWrapper(std::move(startupScript)),
        startupScriptSourceURL=std::move(startupScriptSourceURL)]
         (JSExecutor* executor) mutable {
-    auto bundleRegistry = bundleRegistryWrap.move();
-    if (bundleRegistry) {
-      executor->setBundleRegistry(std::move(bundleRegistry));
+    auto unbundle = unbundleWrap.move();
+    if (unbundle) {
+      executor->setJSModulesUnbundle(std::move(unbundle));
     }
     executor->loadApplicationScript(std::move(*startupScript),
                                     std::move(startupScriptSourceURL));
@@ -113,11 +107,11 @@ void NativeToJsBridge::loadApplication(
 }
 
 void NativeToJsBridge::loadApplicationSync(
-    std::unique_ptr<RAMBundleRegistry> bundleRegistry,
+    std::unique_ptr<JSModulesUnbundle> unbundle,
     std::unique_ptr<const JSBigString> startupScript,
     std::string startupScriptSourceURL) {
-  if (bundleRegistry) {
-    m_executor->setBundleRegistry(std::move(bundleRegistry));
+  if (unbundle) {
+    m_executor->setJSModulesUnbundle(std::move(unbundle));
   }
   m_executor->loadApplicationScript(std::move(startupScript),
                                         std::move(startupScriptSourceURL));
@@ -175,12 +169,6 @@ void NativeToJsBridge::invokeCallback(double callbackId, folly::dynamic&& argume
     });
 }
 
-void NativeToJsBridge::registerBundle(uint32_t bundleId, const std::string& bundlePath) {
-  runOnExecutorQueue([bundleId, bundlePath] (JSExecutor* executor) {
-    executor->registerBundle(bundleId, bundlePath);
-  });
-}
-
 void NativeToJsBridge::setGlobalVariable(std::string propName,
                                          std::unique_ptr<const JSBigString> jsonValue) {
   runOnExecutorQueue([propName=std::move(propName), jsonValue=folly::makeMoveWrapper(std::move(jsonValue))]
@@ -194,13 +182,38 @@ void* NativeToJsBridge::getJavaScriptContext() {
   return m_executor->getJavaScriptContext();
 }
 
-bool NativeToJsBridge::isInspectable() {
-  return m_executor->isInspectable();
+bool NativeToJsBridge::supportsProfiling() {
+  // Intentionally doesn't post to jsqueue. supportsProfiling() can be called from any thread.
+  return m_executor->supportsProfiling();
 }
 
-void NativeToJsBridge::handleMemoryPressure(int pressureLevel) {
+void NativeToJsBridge::startProfiler(const std::string& title) {
   runOnExecutorQueue([=] (JSExecutor* executor) {
-    executor->handleMemoryPressure(pressureLevel);
+    executor->startProfiler(title);
+  });
+}
+
+void NativeToJsBridge::stopProfiler(const std::string& title, const std::string& filename) {
+  runOnExecutorQueue([=] (JSExecutor* executor) {
+    executor->stopProfiler(title, filename);
+  });
+}
+
+void NativeToJsBridge::handleMemoryPressureUiHidden() {
+  runOnExecutorQueue([=] (JSExecutor* executor) {
+    executor->handleMemoryPressureUiHidden();
+  });
+}
+
+void NativeToJsBridge::handleMemoryPressureModerate() {
+  runOnExecutorQueue([=] (JSExecutor* executor) {
+    executor->handleMemoryPressureModerate();
+  });
+}
+
+void NativeToJsBridge::handleMemoryPressureCritical() {
+  runOnExecutorQueue([=] (JSExecutor* executor) {
+    executor->handleMemoryPressureCritical();
   });
 }
 

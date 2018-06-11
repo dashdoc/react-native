@@ -1,11 +1,18 @@
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * All rights reserved.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  */
 
 package com.facebook.react.tests;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import com.facebook.react.bridge.BaseJavaModule;
 import com.facebook.react.bridge.CatalystInstance;
@@ -33,18 +40,14 @@ import com.facebook.react.uimanager.UIImplementationProvider;
 import com.facebook.react.uimanager.UIManagerModule;
 import com.facebook.react.uimanager.ViewManager;
 import com.facebook.react.views.view.ReactViewManager;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+
 import org.junit.Ignore;
 
 /**
  * Integration test to verify passing various types of parameters from JS to Java works
  *
  * TODO: we should run these tests with isBlockingSynchronousMethod = true as well,
- * since they currently use a completely different codepath
+ * since they currrently use a completely different codepath
  */
 @Ignore("Fix prop types and view managers.")
 public class CatalystNativeJSToJavaParametersTestCase extends ReactIntegrationTestCase {
@@ -84,8 +87,11 @@ public class CatalystNativeJSToJavaParametersTestCase extends ReactIntegrationTe
 
     List<ViewManager> viewManagers = Arrays.<ViewManager>asList(
         new ReactViewManager());
-    final UIManagerModule mUIManager =
-        new UIManagerModule(getContext(), viewManagers, new UIImplementationProvider(), 0);
+    final UIManagerModule mUIManager = new UIManagerModule(
+        getContext(),
+        viewManagers,
+        new UIImplementationProvider(),
+        false);
     UiThreadUtil.runOnUiThread(
         new Runnable() {
           @Override
@@ -98,11 +104,12 @@ public class CatalystNativeJSToJavaParametersTestCase extends ReactIntegrationTe
     mRecordingTestModule = new RecordingTestModule();
     mCatalystInstance = ReactTestHelper.catalystInstanceBuilder(this)
         .addNativeModule(mRecordingTestModule)
-        .addNativeModule(new AndroidInfoModule(getContext()))
+        .addNativeModule(new AndroidInfoModule())
         .addNativeModule(new DeviceInfoModule(getContext()))
         .addNativeModule(new AppStateModule(getContext()))
         .addNativeModule(new FakeWebSocketModule())
         .addNativeModule(mUIManager)
+        .addJSModule(TestJSToJavaParametersModule.class)
         .build();
   }
 

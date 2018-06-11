@@ -1,10 +1,12 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @format
+ * @providesModule deepFreezeAndThrowOnMutationInDev
  * @flow
  */
 
@@ -27,18 +29,16 @@
  * Freezing the object and adding the throw mechanism is expensive and will
  * only be used in DEV.
  */
-function deepFreezeAndThrowOnMutationInDev<T: Object>(object: T): T {
+function deepFreezeAndThrowOnMutationInDev(object: Object) {
   if (__DEV__) {
-    if (
-      typeof object !== 'object' ||
-      object === null ||
-      Object.isFrozen(object) ||
-      Object.isSealed(object)
-    ) {
-      return object;
+    if (typeof object !== 'object' ||
+        object === null ||
+        Object.isFrozen(object) ||
+        Object.isSealed(object)) {
+      return;
     }
 
-    const keys = Object.keys(object);
+    var keys = Object.keys(object);
 
     for (var i = 0; i < keys.length; i++) {
       var key = keys[i];
@@ -58,17 +58,13 @@ function deepFreezeAndThrowOnMutationInDev<T: Object>(object: T): T {
       }
     }
   }
-  return object;
 }
 
 function throwOnImmutableMutation(key, value) {
   throw Error(
-    'You attempted to set the key `' +
-      key +
-      '` with the value `' +
-      JSON.stringify(value) +
-      '` on an object that is meant to be immutable ' +
-      'and has been frozen.',
+    'You attempted to set the key `' + key + '` with the value `' +
+    JSON.stringify(value) + '` on an object that is meant to be immutable ' +
+    'and has been frozen.'
   );
 }
 

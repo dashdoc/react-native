@@ -1,8 +1,10 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  */
 
 #import "RCTTiming.h"
@@ -15,7 +17,7 @@
 
 static const NSTimeInterval kMinimumSleepInterval = 1;
 
-// These timing contants should be kept in sync with the ones in `JSTimers.js`.
+// These timing contants should be kept in sync with the ones in `JSTimersExecution.js`.
 // The duration of a frame. This assumes that we want to run at 60 fps.
 static const NSTimeInterval kFrameDuration = 1.0 / 60.0;
 // The minimum time left in a frame to trigger the idle callback.
@@ -195,7 +197,7 @@ RCT_EXPORT_MODULE()
     NSArray<NSNumber *> *sortedTimers = [[timersToCall sortedArrayUsingComparator:^(_RCTTimer *a, _RCTTimer *b) {
       return [a.target compare:b.target];
     }] valueForKey:@"callbackID"];
-    [_bridge enqueueJSCall:@"JSTimers"
+    [_bridge enqueueJSCall:@"JSTimersExecution"
                     method:@"callTimers"
                       args:@[sortedTimers]
                 completion:NULL];
@@ -215,7 +217,7 @@ RCT_EXPORT_MODULE()
     if (kFrameDuration - frameElapsed >= kIdleCallbackFrameDeadline) {
       NSTimeInterval currentTimestamp = [[NSDate date] timeIntervalSince1970];
       NSNumber *absoluteFrameStartMS = @((currentTimestamp - frameElapsed) * 1000);
-      [_bridge enqueueJSCall:@"JSTimers"
+      [_bridge enqueueJSCall:@"JSTimersExecution"
                       method:@"callIdleCallbacks"
                         args:@[absoluteFrameStartMS]
                   completion:NULL];

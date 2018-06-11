@@ -1,15 +1,18 @@
-// Copyright (c) 2004-present, Facebook, Inc.
-
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+// Copyright 2004-present Facebook. All Rights Reserved.
 
 #pragma once
 
+#if defined(WITH_JSC_EXTRA_TRACING) || DEBUG
+
+#include <inttypes.h>
 #include <jschelpers/JavaScriptCore.h>
 
 namespace facebook {
 namespace react {
 
+uint64_t tracingTagFromJSValue(JSContextRef ctx, JSValueRef value, JSValueRef* exception);
 void addNativeTracingHooks(JSGlobalContextRef ctx);
 
 } }
+
+#endif

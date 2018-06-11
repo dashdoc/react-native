@@ -1,10 +1,12 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @format
+ * @providesModule AppContainer
  * @flow
  */
 
@@ -21,24 +23,22 @@ const View = require('View');
 type Context = {
   rootTag: number,
 };
-
-type Props = $ReadOnly<{|
-  children?: React.Node,
+type Props = {
+  children?: React.Children,
   rootTag: number,
-  WrapperComponent?: ?React.ComponentType<any>,
-|}>;
-
-type State = {|
-  inspector: ?React.Node,
+};
+type State = {
+  inspector: ?React.Element<*>,
   mainKey: number,
-|};
+};
 
-class AppContainer extends React.Component<Props, State> {
+class AppContainer extends React.Component {
+  props: Props;
   state: State = {
     inspector: null,
     mainKey: 1,
   };
-  _mainRef: ?React.ElementRef<typeof View>;
+  _mainRef: ?React.Element<*>;
   _subscription: ?EmitterSubscription = null;
 
   static childContextTypes = {
@@ -58,20 +58,19 @@ class AppContainer extends React.Component<Props, State> {
           'toggleElementInspector',
           () => {
             const Inspector = require('Inspector');
-            const inspector = this.state.inspector ? null : (
-              <Inspector
-                inspectedViewTag={ReactNative.findNodeHandle(this._mainRef)}
-                onRequestRerenderApp={updateInspectedViewTag => {
-                  this.setState(
-                    s => ({mainKey: s.mainKey + 1}),
-                    () =>
-                      updateInspectedViewTag(
-                        ReactNative.findNodeHandle(this._mainRef),
-                      ),
-                  );
-                }}
-              />
-            );
+            const inspector = this.state.inspector
+              ? null
+              : <Inspector
+                  inspectedViewTag={ReactNative.findNodeHandle(this._mainRef)}
+                  onRequestRerenderApp={(updateInspectedViewTag) => {
+                    this.setState(
+                      (s) => ({mainKey: s.mainKey + 1}),
+                      () => updateInspectedViewTag(
+                        ReactNative.findNodeHandle(this._mainRef)
+                      )
+                    );
+                  }}
+                />;
             this.setState({inspector});
           },
         );
@@ -80,12 +79,12 @@ class AppContainer extends React.Component<Props, State> {
   }
 
   componentWillUnmount(): void {
-    if (this._subscription != null) {
+    if (this._subscription) {
       this._subscription.remove();
     }
   }
 
-  render(): React.Node {
+  render(): React.Element<*> {
     let yellowBox = null;
     if (__DEV__) {
       if (!global.__RCTProfileIsProfiling) {
@@ -94,26 +93,15 @@ class AppContainer extends React.Component<Props, State> {
       }
     }
 
-    let innerView = (
-      <View
-        collapsable={!this.state.inspector}
-        key={this.state.mainKey}
-        pointerEvents="box-none"
-        style={styles.appContainer}
-        ref={ref => {
-          this._mainRef = ref;
-        }}>
-        {this.props.children}
-      </View>
-    );
-
-    const Wrapper = this.props.WrapperComponent;
-    if (Wrapper != null) {
-      innerView = <Wrapper>{innerView}</Wrapper>;
-    }
     return (
       <View style={styles.appContainer} pointerEvents="box-none">
-        {innerView}
+        <View
+          collapsable={!this.state.inspector}
+          key={this.state.mainKey}
+          pointerEvents="box-none"
+          style={styles.appContainer} ref={(ref) => {this._mainRef = ref;}}>
+          {this.props.children}
+        </View>
         {yellowBox}
         {this.state.inspector}
       </View>

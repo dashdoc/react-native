@@ -1,8 +1,10 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  */
 
 #import "UIView+React.h"
@@ -25,15 +27,20 @@
   objc_setAssociatedObject(self, @selector(reactTag), reactTag, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (NSNumber *)nativeID
+#if RCT_DEV
+
+- (RCTShadowView *)_DEBUG_reactShadowView
 {
   return objc_getAssociatedObject(self, _cmd);
 }
 
-- (void)setNativeID:(NSNumber *)nativeID
+- (void)_DEBUG_setReactShadowView:(RCTShadowView *)shadowView
 {
-  objc_setAssociatedObject(self, @selector(nativeID), nativeID, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  // Use assign to avoid keeping the shadowView alive it if no longer exists
+  objc_setAssociatedObject(self, @selector(_DEBUG_reactShadowView), shadowView, OBJC_ASSOCIATION_ASSIGN);
 }
+
+#endif
 
 - (BOOL)isReactRootView
 {
@@ -80,20 +87,6 @@
   [subview removeFromSuperview];
 }
 
-#pragma mark - Display
-
-- (YGDisplay)reactDisplay
-{
-  return self.isHidden ? YGDisplayNone : YGDisplayFlex;
-}
-
-- (void)setReactDisplay:(YGDisplay)display
-{
-  self.hidden = display == YGDisplayNone;
-}
-
-#pragma mark - Layout Direction
-
 - (UIUserInterfaceLayoutDirection)reactLayoutDirection
 {
   if ([self respondsToSelector:@selector(semanticContentAttribute)]) {
@@ -114,8 +107,6 @@
     objc_setAssociatedObject(self, @selector(reactLayoutDirection), @(layoutDirection), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
   }
 }
-
-#pragma mark - zIndex
 
 - (NSInteger)reactZIndex
 {
@@ -155,11 +146,6 @@
   }
 }
 
-- (void)didSetProps:(__unused NSArray<NSString *> *)changedProps
-{
-  // The default implementation does nothing.
-}
-
 - (void)reactSetFrame:(CGRect)frame
 {
   // These frames are in terms of anchorPoint = topLeft, but internally the
@@ -179,6 +165,11 @@
 
   self.center = position;
   self.bounds = bounds;
+}
+
+- (void)reactSetInheritedBackgroundColor:(__unused UIColor *)inheritedBackgroundColor
+{
+  // Does nothing by default
 }
 
 - (UIViewController *)reactViewController

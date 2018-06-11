@@ -1,21 +1,25 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  */
 
 package com.facebook.react.devsupport;
 
-import com.facebook.react.bridge.ReadableArray;
-import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.ReadableType;
-import com.facebook.react.common.MapBuilder;
-import com.facebook.react.devsupport.interfaces.StackFrame;
+import javax.annotation.Nullable;
+
 import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.annotation.Nullable;
+
+import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.common.MapBuilder;
+import com.facebook.react.devsupport.interfaces.StackFrame;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -28,10 +32,8 @@ public class StackTraceHelper {
   public static final java.lang.String COLUMN_KEY = "column";
   public static final java.lang.String LINE_NUMBER_KEY = "lineNumber";
 
-  private static final Pattern STACK_FRAME_PATTERN1 = Pattern.compile(
+  private static final Pattern STACK_FRAME_PATTERN = Pattern.compile(
       "^(?:(.*?)@)?(.*?)\\:([0-9]+)\\:([0-9]+)$");
-  private static final Pattern STACK_FRAME_PATTERN2 = Pattern.compile(
-      "\\s*(?:at)\\s*(.+?)\\s*[@(](.*):([0-9]+):([0-9]+)[)]$");
 
   /**
    * Represents a generic entry in a stack trace, be it originally from JS or Java.
@@ -121,23 +123,18 @@ public class StackTraceHelper {
     int size = stack != null ? stack.size() : 0;
     StackFrame[] result = new StackFrame[size];
     for (int i = 0; i < size; i++) {
-      ReadableType type = stack.getType(i);
-      if (type == ReadableType.Map) {
-        ReadableMap frame = stack.getMap(i);
-        String methodName = frame.getString("methodName");
-        String fileName = frame.getString("file");
-        int lineNumber = -1;
-        if (frame.hasKey(LINE_NUMBER_KEY) && !frame.isNull(LINE_NUMBER_KEY)) {
-          lineNumber = frame.getInt(LINE_NUMBER_KEY);
-        }
-        int columnNumber = -1;
-        if (frame.hasKey(COLUMN_KEY) && !frame.isNull(COLUMN_KEY)) {
-          columnNumber = frame.getInt(COLUMN_KEY);
-        }
-        result[i] = new StackFrameImpl(fileName, methodName, lineNumber, columnNumber);
-      } else if (type == ReadableType.String) {
-        result[i] = new StackFrameImpl(null, stack.getString(i), -1, -1);
+      ReadableMap frame = stack.getMap(i);
+      String methodName = frame.getString("methodName");
+      String fileName = frame.getString("file");
+      int lineNumber = -1;
+      if (frame.hasKey(LINE_NUMBER_KEY) && !frame.isNull(LINE_NUMBER_KEY)) {
+        lineNumber = frame.getInt(LINE_NUMBER_KEY);
       }
+      int columnNumber = -1;
+      if (frame.hasKey(COLUMN_KEY) && !frame.isNull(COLUMN_KEY)) {
+        columnNumber = frame.getInt(COLUMN_KEY);
+      }
+      result[i] = new StackFrameImpl(fileName, methodName, lineNumber, columnNumber);
     }
     return result;
   }
@@ -177,22 +174,21 @@ public class StackTraceHelper {
     String[] stackTrace = stack.split("\n");
     StackFrame[] result = new StackFrame[stackTrace.length];
     for (int i = 0; i < stackTrace.length; ++i) {
-      Matcher matcher1 = STACK_FRAME_PATTERN1.matcher(stackTrace[i]);
-      Matcher matcher2 = STACK_FRAME_PATTERN2.matcher(stackTrace[i]);
-      Matcher matcher;
-      if (matcher2.find()) {
-        matcher = matcher2;
-      } else if (matcher1.find()) {
-        matcher = matcher1;
-      } else {
+      if (stackTrace[i].equals("[native code]")) {
         result[i] = new StackFrameImpl(null, stackTrace[i], -1, -1);
-        continue;
+      } else {
+        Matcher matcher = STACK_FRAME_PATTERN.matcher(stackTrace[i]);
+        if (!matcher.find()) {
+          throw new IllegalArgumentException(
+            "Unexpected stack frame format: " + stackTrace[i]);
+        }
+
+        result[i] = new StackFrameImpl(
+            matcher.group(2),
+            matcher.group(1) == null ? "(unknown)" : matcher.group(1),
+            Integer.parseInt(matcher.group(3)),
+            Integer.parseInt(matcher.group(4)));
       }
-      result[i] = new StackFrameImpl(
-        matcher.group(2),
-        matcher.group(1) == null ? "(unknown)" : matcher.group(1),
-        Integer.parseInt(matcher.group(3)),
-        Integer.parseInt(matcher.group(4)));
     }
     return result;
   }

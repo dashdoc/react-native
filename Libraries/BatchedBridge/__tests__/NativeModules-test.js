@@ -1,21 +1,18 @@
 /**
  * Copyright (c) 2013-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @format
- * @emails oncall+react_native
  */
-
 'use strict';
 
-jest
-  .enableAutomock()
-  .unmock('BatchedBridge')
-  .unmock('defineLazyObjectProperty')
-  .unmock('MessageQueue')
-  .unmock('NativeModules');
+jest.unmock('BatchedBridge');
+jest.unmock('defineLazyObjectProperty');
+jest.unmock('MessageQueue');
+jest.unmock('NativeModules');
 
 let BatchedBridge;
 let NativeModules;
@@ -57,16 +54,11 @@ describe('MessageQueue', function() {
   });
 
   it('should make round trip and clear memory', function() {
-    const onFail = jest.fn();
-    const onSucc = jest.fn();
+    const onFail = jasmine.createSpy();
+    const onSucc = jasmine.createSpy();
 
     // Perform communication
-    NativeModules.RemoteModule1.promiseMethod(
-      'paloAlto',
-      'menloPark',
-      onFail,
-      onSucc,
-    );
+    NativeModules.RemoteModule1.promiseMethod('paloAlto', 'menloPark', onFail, onSucc);
     NativeModules.RemoteModule2.promiseMethod('mac', 'windows', onFail, onSucc);
 
     const resultingRemoteInvocations = BatchedBridge.flushedQueue();
@@ -80,10 +72,9 @@ describe('MessageQueue', function() {
 
     expect(resultingRemoteInvocations[0][0]).toBe(0); // `RemoteModule1`
     expect(resultingRemoteInvocations[1][0]).toBe(1); // `promiseMethod`
-    expect([
-      // the arguments
+    expect([                                          // the arguments
       resultingRemoteInvocations[2][0][0],
-      resultingRemoteInvocations[2][0][1],
+      resultingRemoteInvocations[2][0][1]
     ]).toEqual(['paloAlto', 'menloPark']);
     // Callbacks ids are tacked onto the end of the remote arguments.
     const firstFailCBID = resultingRemoteInvocations[2][0][2];
@@ -91,10 +82,9 @@ describe('MessageQueue', function() {
 
     expect(resultingRemoteInvocations[0][1]).toBe(1); // `RemoteModule2`
     expect(resultingRemoteInvocations[1][1]).toBe(1); // `promiseMethod`
-    expect([
-      // the arguments
+    expect([                                          // the arguments
       resultingRemoteInvocations[2][1][0],
-      resultingRemoteInvocations[2][1][1],
+      resultingRemoteInvocations[2][1][1]
     ]).toEqual(['mac', 'windows']);
     const secondFailCBID = resultingRemoteInvocations[2][1][2];
     const secondSuccCBID = resultingRemoteInvocations[2][1][3];
@@ -105,8 +95,8 @@ describe('MessageQueue', function() {
     expect(function() {
       BatchedBridge.__invokeCallback(firstSuccCBID, ['firstSucc']);
     }).toThrow();
-    expect(onFail.mock.calls.length).toBe(1);
-    expect(onSucc.mock.calls.length).toBe(0);
+    expect(onFail.calls.count()).toBe(1);
+    expect(onSucc.calls.count()).toBe(0);
 
     // Handle the second remote invocation by signaling success.
     BatchedBridge.__invokeCallback(secondSuccCBID, ['secondSucc']);
@@ -114,7 +104,7 @@ describe('MessageQueue', function() {
     expect(function() {
       BatchedBridge.__invokeCallback(secondFailCBID, ['secondFail']);
     }).toThrow();
-    expect(onFail.mock.calls.length).toBe(1);
-    expect(onSucc.mock.calls.length).toBe(1);
+    expect(onFail.calls.count()).toBe(1);
+    expect(onSucc.calls.count()).toBe(1);
   });
 });

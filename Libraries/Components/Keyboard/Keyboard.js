@@ -1,16 +1,16 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @format
+ * @providesModule Keyboard
  * @flow
  */
-
 'use strict';
 
-const LayoutAnimation = require('LayoutAnimation');
 const invariant = require('fbjs/lib/invariant');
 const NativeEventEmitter = require('NativeEventEmitter');
 const KeyboardObserver = require('NativeModules').KeyboardObserver;
@@ -25,21 +25,16 @@ type KeyboardEventName =
   | 'keyboardWillChangeFrame'
   | 'keyboardDidChangeFrame';
 
-type ScreenRect = $ReadOnly<{|
-  screenX: number,
-  screenY: number,
-  width: number,
-  height: number,
-|}>;
+type KeyboardEventData = {
+  endCoordinates: {
+    width: number,
+    height: number,
+    screenX: number,
+    screenY: number,
+  },
+};
 
-export type KeyboardEvent = $ReadOnly<{|
-  duration?: number,
-  easing?: string,
-  endCoordinates: ScreenRect,
-  startCoordinates?: ScreenRect,
-|}>;
-
-type KeyboardEventListener = (e: KeyboardEvent) => void;
+type KeyboardEventListener = (e: KeyboardEventData) => void;
 
 // The following object exists for documentation purposes
 // Actual work happens in
@@ -105,9 +100,7 @@ let Keyboard = {
    * - `keyboardDidChangeFrame`
    *
    * Note that if you set `android:windowSoftInputMode` to `adjustResize`  or `adjustNothing`,
-   * only `keyboardDidShow` and `keyboardDidHide` events will be available on Android.
-   * `keyboardWillShow` as well as `keyboardWillHide` are generally not available on Android
-   * since there is no native corresponding event.
+   * only `keyboardDidShow` and `keyboardDidHide` events will available on Android.
    *
    * @param {function} callback function to be called when the event fires.
    */
@@ -139,31 +132,12 @@ let Keyboard = {
    */
   dismiss() {
     invariant(false, 'Dummy method used for documentation');
-  },
-
-  /**
-   * Useful for syncing TextInput (or other keyboard accessory view) size of
-   * position changes with keyboard movements.
-   */
-  scheduleLayoutAnimation(event: KeyboardEvent) {
-    invariant(false, 'Dummy method used for documentation');
-  },
+  }
 };
 
 // Throw away the dummy object and reassign it to original module
 Keyboard = KeyboardEventEmitter;
 Keyboard.dismiss = dismissKeyboard;
-Keyboard.scheduleLayoutAnimation = function(event: KeyboardEvent) {
-  const {duration, easing} = event;
-  if (duration) {
-    LayoutAnimation.configureNext({
-      duration: duration,
-      update: {
-        duration: duration,
-        type: (easing && LayoutAnimation.Types[easing]) || 'keyboard',
-      },
-    });
-  }
-};
 
 module.exports = Keyboard;
+

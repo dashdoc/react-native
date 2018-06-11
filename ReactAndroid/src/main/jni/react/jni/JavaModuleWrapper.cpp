@@ -1,7 +1,4 @@
-// Copyright (c) 2004-present, Facebook, Inc.
-
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+// Copyright 2004-present Facebook. All Rights Reserved.
 
 #include "JavaModuleWrapper.h"
 
@@ -77,12 +74,13 @@ std::vector<MethodDescriptor> JavaNativeModule::getMethods() {
 
 folly::dynamic JavaNativeModule::getConstants() {
   static auto constantsMethod =
-    wrapper_->getClass()->getMethod<NativeMap::javaobject()>("getConstants");
+    wrapper_->getClass()->getMethod<NativeArray::javaobject()>("getConstants");
   auto constants = constantsMethod(wrapper_);
   if (!constants) {
     return nullptr;
   } else {
-    return cthis(constants)->consume();
+    // See JavaModuleWrapper#getConstants for the other side of this hack.
+    return cthis(constants)->consume()[0];
   }
 }
 
@@ -149,12 +147,13 @@ std::vector<MethodDescriptor> NewJavaNativeModule::getMethods() {
 
 folly::dynamic NewJavaNativeModule::getConstants() {
   static auto constantsMethod =
-    wrapper_->getClass()->getMethod<NativeMap::javaobject()>("getConstants");
+    wrapper_->getClass()->getMethod<NativeArray::javaobject()>("getConstants");
   auto constants = constantsMethod(wrapper_);
   if (!constants) {
     return nullptr;
   } else {
-    return cthis(constants)->consume();
+    // See JavaModuleWrapper#getConstants for the other side of this hack.
+    return cthis(constants)->consume()[0];
   }
 }
 

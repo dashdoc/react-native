@@ -38,40 +38,43 @@ exports[`FlatList renders all the bells and whistles 1`] = `
   onEndReachedThreshold={2}
   onLayout={[Function]}
   onMomentumScrollEnd={[Function]}
-  onRefresh={[MockFunction]}
+  onRefresh={[Function]}
   onScroll={[Function]}
   onScrollBeginDrag={[Function]}
   onScrollEndDrag={[Function]}
+  onViewableItemsChanged={undefined}
   refreshControl={
     <RefreshControlMock
-      onRefresh={[MockFunction]}
+      onRefresh={[Function]}
       refreshing={false}
     />
   }
   refreshing={false}
   renderItem={[Function]}
+  renderScrollComponent={[Function]}
   scrollEventThrottle={50}
   stickyHeaderIndices={Array []}
   updateCellsBatchingPeriod={50}
-  viewabilityConfigCallbackPairs={Array []}
   windowSize={21}
 >
   <RCTRefreshControl />
   <View>
     <View
       onLayout={[Function]}
-      style={null}
     >
       <header />
     </View>
     <View
-      style={null}
+      onLayout={undefined}
     >
       <View
         style={
-          Object {
-            "flexDirection": "row",
-          }
+          Array [
+            Object {
+              "flexDirection": "row",
+            },
+            undefined,
+          ]
         }
       >
         <item
@@ -84,13 +87,16 @@ exports[`FlatList renders all the bells and whistles 1`] = `
       <separator />
     </View>
     <View
-      style={null}
+      onLayout={undefined}
     >
       <View
         style={
-          Object {
-            "flexDirection": "row",
-          }
+          Array [
+            Object {
+              "flexDirection": "row",
+            },
+            undefined,
+          ]
         }
       >
         <item
@@ -103,13 +109,16 @@ exports[`FlatList renders all the bells and whistles 1`] = `
       <separator />
     </View>
     <View
-      style={null}
+      onLayout={undefined}
     >
       <View
         style={
-          Object {
-            "flexDirection": "row",
-          }
+          Array [
+            Object {
+              "flexDirection": "row",
+            },
+            undefined,
+          ]
         }
       >
         <item
@@ -119,7 +128,6 @@ exports[`FlatList renders all the bells and whistles 1`] = `
     </View>
     <View
       onLayout={[Function]}
-      style={null}
     >
       <footer />
     </View>
@@ -145,11 +153,12 @@ exports[`FlatList renders empty list 1`] = `
   onScroll={[Function]}
   onScrollBeginDrag={[Function]}
   onScrollEndDrag={[Function]}
+  onViewableItemsChanged={undefined}
   renderItem={[Function]}
+  renderScrollComponent={[Function]}
   scrollEventThrottle={50}
   stickyHeaderIndices={Array []}
   updateCellsBatchingPeriod={50}
-  viewabilityConfigCallbackPairs={Array []}
   windowSize={21}
 >
   <View />
@@ -158,6 +167,7 @@ exports[`FlatList renders empty list 1`] = `
 
 exports[`FlatList renders null list 1`] = `
 <RCTScrollView
+  data={undefined}
   disableVirtualization={false}
   getItem={[Function]}
   getItemCount={[Function]}
@@ -173,11 +183,12 @@ exports[`FlatList renders null list 1`] = `
   onScroll={[Function]}
   onScrollBeginDrag={[Function]}
   onScrollEndDrag={[Function]}
+  onViewableItemsChanged={undefined}
   renderItem={[Function]}
+  renderScrollComponent={[Function]}
   scrollEventThrottle={50}
   stickyHeaderIndices={Array []}
   updateCellsBatchingPeriod={50}
-  viewabilityConfigCallbackPairs={Array []}
   windowSize={21}
 >
   <View />
@@ -214,17 +225,17 @@ exports[`FlatList renders simple list 1`] = `
   onScroll={[Function]}
   onScrollBeginDrag={[Function]}
   onScrollEndDrag={[Function]}
+  onViewableItemsChanged={undefined}
   renderItem={[Function]}
+  renderScrollComponent={[Function]}
   scrollEventThrottle={50}
   stickyHeaderIndices={Array []}
   updateCellsBatchingPeriod={50}
-  viewabilityConfigCallbackPairs={Array []}
   windowSize={21}
 >
   <View>
     <View
       onLayout={[Function]}
-      style={null}
     >
       <item
         value="i1"
@@ -232,7 +243,6 @@ exports[`FlatList renders simple list 1`] = `
     </View>
     <View
       onLayout={[Function]}
-      style={null}
     >
       <item
         value="i2"
@@ -240,7 +250,6 @@ exports[`FlatList renders simple list 1`] = `
     </View>
     <View
       onLayout={[Function]}
-      style={null}
     >
       <item
         value="i3"

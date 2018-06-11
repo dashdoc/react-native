@@ -1,21 +1,20 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @providesModule DatePickerIOS
+ * @flow
  *
  * This is a controlled component version of RCTDatePickerIOS
- *
- * @format
- * @flow
  */
-
 'use strict';
 
 const NativeMethodsMixin = require('NativeMethodsMixin');
 const React = require('React');
-const invariant = require('fbjs/lib/invariant');
 const PropTypes = require('prop-types');
 const StyleSheet = require('StyleSheet');
 const View = require('View');
@@ -24,25 +23,11 @@ const ViewPropTypes = require('ViewPropTypes');
 const createReactClass = require('create-react-class');
 const requireNativeComponent = require('requireNativeComponent');
 
-import type {ViewProps} from 'ViewPropTypes';
 type DefaultProps = {
   mode: 'date' | 'time' | 'datetime',
 };
 
 type Event = Object;
-
-type Props = $ReadOnly<{|
-  ...ViewProps,
-  date?: ?Date,
-  initialDate?: ?Date,
-  locale?: ?string,
-  maximumDate?: ?Date,
-  minimumDate?: ?Date,
-  minuteInterval?: ?(1 | 2 | 3 | 4 | 5 | 6 | 10 | 12 | 15 | 20 | 30),
-  mode?: ?('date' | 'time' | 'datetime'),
-  onDateChange: (date: Date) => void,
-  timeZoneOffsetInMinutes?: ?number,
-|}>;
 
 /**
  * Use `DatePickerIOS` to render a date/time picker (selector) on iOS.  This is
@@ -51,7 +36,8 @@ type Props = $ReadOnly<{|
  * the user's change will be reverted immediately to reflect `props.date` as the
  * source of truth.
  */
-const DatePickerIOS = ((createReactClass({
+// $FlowFixMe(>=0.41.0)
+const DatePickerIOS = createReactClass({
   displayName: 'DatePickerIOS',
   // TOOD: Put a better type for _picker
   _picker: (undefined: ?$FlowFixMe),
@@ -63,17 +49,7 @@ const DatePickerIOS = ((createReactClass({
     /**
      * The currently selected date.
      */
-    date: PropTypes.instanceOf(Date),
-
-    /**
-     * Provides an initial value that will change when the user starts selecting
-     * a date. It is useful for simple use-cases where you do not want to deal
-     * with listening to events and updating the date prop to keep the
-     * controlled state in sync. The controlled state has known bugs which
-     * causes it to go out of sync with native. The initialDate prop is intended
-     * to allow you to have native be source of truth.
-     */
-    initialDate: PropTypes.instanceOf(Date),
+    date: PropTypes.instanceOf(Date).isRequired,
 
     /**
      * Date change handler.
@@ -104,11 +80,6 @@ const DatePickerIOS = ((createReactClass({
     mode: PropTypes.oneOf(['date', 'time', 'datetime']),
 
     /**
-     * The date picker locale.
-     */
-    locale: PropTypes.string,
-
-    /**
      * The interval at which minutes can be selected.
      */
     minuteInterval: PropTypes.oneOf([1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30]),
@@ -129,46 +100,34 @@ const DatePickerIOS = ((createReactClass({
     };
   },
 
-  componentDidUpdate: function() {
-    if (this.props.date) {
-      const propsTimeStamp = this.props.date.getTime();
-      if (this._picker) {
-        this._picker.setNativeProps({
-          date: propsTimeStamp,
-        });
-      }
-    }
-  },
-
   _onChange: function(event: Event) {
     const nativeTimeStamp = event.nativeEvent.timestamp;
-    this.props.onDateChange &&
-      this.props.onDateChange(new Date(nativeTimeStamp));
+    this.props.onDateChange && this.props.onDateChange(
+      new Date(nativeTimeStamp)
+    );
     // $FlowFixMe(>=0.41.0)
     this.props.onChange && this.props.onChange(event);
+
+    // We expect the onChange* handlers to be in charge of updating our `date`
+    // prop. That way they can also disallow/undo/mutate the selection of
+    // certain values. In other words, the embedder of this component should
+    // be the source of truth, not the native component.
+    const propsTimeStamp = this.props.date.getTime();
+    if (this._picker && nativeTimeStamp !== propsTimeStamp) {
+      this._picker.setNativeProps({
+        date: propsTimeStamp,
+      });
+    }
   },
 
   render: function() {
     const props = this.props;
-    invariant(
-      props.date || props.initialDate,
-      'A selected date or initial date should be specified.',
-    );
     return (
       <View style={props.style}>
         <RCTDatePickerIOS
-          ref={picker => {
-            this._picker = picker;
-          }}
+          ref={ picker => { this._picker = picker; } }
           style={styles.datePickerIOS}
-          date={
-            props.date
-              ? props.date.getTime()
-              : props.initialDate
-                ? props.initialDate.getTime()
-                : undefined
-          }
-          locale={props.locale ? props.locale : undefined}
+          date={props.date.getTime()}
           maximumDate={
             props.maximumDate ? props.maximumDate.getTime() : undefined
           }
@@ -184,8 +143,8 @@ const DatePickerIOS = ((createReactClass({
         />
       </View>
     );
-  },
-}): any): React.ComponentType<Props>);
+  }
+});
 
 const styles = StyleSheet.create({
   datePickerIOS: {
@@ -197,12 +156,11 @@ const RCTDatePickerIOS = requireNativeComponent('RCTDatePicker', {
   propTypes: {
     ...DatePickerIOS.propTypes,
     date: PropTypes.number,
-    locale: PropTypes.string,
     minimumDate: PropTypes.number,
     maximumDate: PropTypes.number,
     onDateChange: () => null,
     onChange: PropTypes.func,
-  },
+  }
 });
 
 module.exports = DatePickerIOS;

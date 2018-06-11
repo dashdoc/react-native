@@ -1,8 +1,10 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  */
 
 #import "RCTWebSocketExecutor.h"
@@ -52,9 +54,9 @@ RCT_EXPORT_MODULE()
 - (void)setUp
 {
   if (!_url) {
-    NSInteger port = [[[_bridge bundleURL] port] integerValue] ?: RCT_METRO_PORT;
+    NSInteger port = [[[_bridge bundleURL] port] integerValue] ?: 8081;
     NSString *host = [[_bridge bundleURL] host] ?: @"localhost";
-    NSString *URLString = [NSString stringWithFormat:@"http://%@:%lld/debugger-proxy?role=client", host, (long long)port];
+    NSString *URLString = [NSString stringWithFormat:@"http://%@:%zd/debugger-proxy?role=client", host, port];
     _url = [RCTConvert NSURL:URLString];
   }
 
@@ -103,7 +105,7 @@ RCT_EXPORT_MODULE()
 {
   _socketOpenSemaphore = dispatch_semaphore_create(0);
   [_socket open];
-  long connected = dispatch_semaphore_wait(_socketOpenSemaphore, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 15));
+  long connected = dispatch_semaphore_wait(_socketOpenSemaphore, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 10));
   return connected == 0 && _socket.readyState == RCTSR_OPEN;
 }
 
@@ -115,7 +117,7 @@ RCT_EXPORT_MODULE()
     initError = error;
     dispatch_semaphore_signal(s);
   }];
-  long runtimeIsReady = dispatch_semaphore_wait(s, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 10));
+  long runtimeIsReady = dispatch_semaphore_wait(s, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC));
   if (initError) {
     RCTLogInfo(@"Websocket runtime setup failed: %@", initError);
   }
@@ -156,7 +158,10 @@ RCT_EXPORT_MODULE()
 
   dispatch_async(_jsQueue, ^{
     if (!self.valid) {
-      callback(RCTErrorWithMessage(@"Runtime is not ready for debugging. Make sure Packager server is running."), nil);
+      NSError *error = [NSError errorWithDomain:@"WS" code:1 userInfo:@{
+        NSLocalizedDescriptionKey: @"Runtime is not ready for debugging. Make sure Packager server is running."
+      }];
+      callback(error, nil);
       return;
     }
 
@@ -170,27 +175,14 @@ RCT_EXPORT_MODULE()
 
 - (void)executeApplicationScript:(NSData *)script sourceURL:(NSURL *)URL onComplete:(RCTJavaScriptCompleteBlock)onComplete
 {
-  // Hack: the bridge transitions out of loading state as soon as this method returns, which prevents us
-  // from completely invalidating the bridge and preventing an endless barage of RCTLog.logIfNoNativeHook
-  // calls if the JS execution environment is broken. We therefore block this thread until this message has returned.
-  dispatch_semaphore_t scriptSem = dispatch_semaphore_create(0);
-
   NSDictionary<NSString *, id> *message = @{
     @"method": @"executeApplicationScript",
     @"url": RCTNullIfNil(URL.absoluteString),
     @"inject": _injectedObjects,
   };
-  [self sendMessage:message onReply:^(NSError *socketError, NSDictionary<NSString *, id> *reply) {
-    if (socketError) {
-      onComplete(socketError);
-    } else {
-      NSString *error = reply[@"error"];
-      onComplete(error ? RCTErrorWithMessage(error) : nil);
-    }
-    dispatch_semaphore_signal(scriptSem);
+  [self sendMessage:message onReply:^(NSError *error, NSDictionary<NSString *, id> *reply) {
+    onComplete(error);
   }];
-
-  dispatch_semaphore_wait(scriptSem, DISPATCH_TIME_FOREVER);
 }
 
 - (void)flushedQueue:(RCTJavaScriptCallback)onComplete
@@ -226,10 +218,9 @@ RCT_EXPORT_MODULE()
       return;
     }
 
-    NSError *jsonError;
-    id result = RCTJSONParse(reply[@"result"], &jsonError);
-    NSString *error = reply[@"error"];
-    onComplete(result, error ? RCTErrorWithMessage(error) : jsonError);
+    NSString *result = reply[@"result"];
+    id objcValue = RCTJSONParse(result, NULL);
+    onComplete(objcValue, nil);
   }];
 }
 

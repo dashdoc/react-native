@@ -1,125 +1,36 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @format
+ * @providesModule Slider
  * @flow
  */
-
 'use strict';
 
-const Image = require('Image');
-const ColorPropType = require('ColorPropType');
-const NativeMethodsMixin = require('NativeMethodsMixin');
-const ReactNative = require('ReactNative');
-const ReactNativeViewAttributes = require('ReactNativeViewAttributes');
-const Platform = require('Platform');
-const React = require('React');
-const PropTypes = require('prop-types');
-const StyleSheet = require('StyleSheet');
-const ViewPropTypes = require('ViewPropTypes');
+var Image = require('Image');
+var ColorPropType = require('ColorPropType');
+var NativeMethodsMixin = require('NativeMethodsMixin');
+var ReactNativeViewAttributes = require('ReactNativeViewAttributes');
+var Platform = require('Platform');
+var React = require('React');
+var PropTypes = require('prop-types');
+var StyleSheet = require('StyleSheet');
+var ViewPropTypes = require('ViewPropTypes');
 
-const createReactClass = require('create-react-class');
-const requireNativeComponent = require('requireNativeComponent');
-
-import type {ImageSource} from 'ImageSource';
-import type {ViewStyleProp} from 'StyleSheet';
-import type {ColorValue} from 'StyleSheetTypes';
-import type {ViewProps} from 'ViewPropTypes';
+var createReactClass = require('create-react-class');
+var requireNativeComponent = require('requireNativeComponent');
 
 type Event = Object;
 
-type IOSProps = $ReadOnly<{|
-  trackImage?: ?ImageSource,
-  minimumTrackImage?: ?ImageSource,
-  maximumTrackImage?: ?ImageSource,
-  thumbImage?: ?ImageSource,
-|}>;
-
-type AndroidProps = $ReadOnly<{|
-  thumbTintColor?: ?ColorValue,
-|}>;
-
-type Props = $ReadOnly<{|
-  ...ViewProps,
-  ...IOSProps,
-  ...AndroidProps,
-  style?: ?ViewStyleProp,
-  value?: ?number,
-  step?: ?number,
-  minimumValue?: ?number,
-  maximumValue?: ?number,
-  minimumTrackTintColor?: ?ColorValue,
-  maximumTrackTintColor?: ?ColorValue,
-  disabled?: ?boolean,
-  onValueChange?: ?Function,
-  onSlidingComplete?: ?Function,
-  testID?: ?string,
-|}>;
-
 /**
  * A component used to select a single value from a range of values.
- *
- * ### Usage
- *
- * The example below shows how to use `Slider` to change
- * a value used by `Text`. The value is stored using
- * the state of the root component (`App`). The same component
- * subscribes to the `onValueChange`  of `Slider` and changes
- * the value using `setState`.
- *
- *```
- * import React from 'react';
- * import { StyleSheet, Text, View, Slider } from 'react-native';
- *
- * export default class App extends React.Component {
- *   constructor(props) {
- *     super(props);
- *     this.state = {
- *       value: 50
- *     }
- *   }
- *
- *   change(value) {
- *     this.setState(() => {
- *       return {
- *         value: parseFloat(value)
- *       };
- *     });
- *   }
- *
- *   render() {
- *     const {value} = this.state;
- *     return (
- *       <View style={styles.container}>
- *         <Text style={styles.text}>{String(value)}</Text>
- *         <Slider
- *           step={1}
- *           maximumValue={100}
- *           onValueChange={this.change.bind(this)}
- *           value={value} />
- *       </View>
- *     );
- *   }
- * }
- *
- * const styles = StyleSheet.create({
- *   container: {
- *     flex: 1,
- *     flexDirection: 'column',
- *     justifyContent: 'center'
- *   },
- *   text: {
- *     fontSize: 50,
- *     textAlign: 'center'
- *   }
- * });
- *```
- *
  */
-const Slider = createReactClass({
+// $FlowFixMe(>=0.41.0)
+var Slider = createReactClass({
   displayName: 'Slider',
   mixins: [NativeMethodsMixin],
 
@@ -228,13 +139,13 @@ const Slider = createReactClass({
     testID: PropTypes.string,
   },
 
-  getDefaultProps: function(): any {
+  getDefaultProps: function() : any {
     return {
       disabled: false,
       value: 0,
       minimumValue: 0,
       maximumValue: 1,
-      step: 0,
+      step: 0
     };
   },
 
@@ -242,55 +153,37 @@ const Slider = createReactClass({
     uiViewClassName: 'RCTSlider',
     validAttributes: {
       ...ReactNativeViewAttributes.RCTView,
-      value: true,
-    },
+      value: true
+    }
   },
 
   render: function() {
     const {style, onValueChange, onSlidingComplete, ...props} = this.props;
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb,react_native_oss) This comment
-     * suppresses an error found when Flow v0.54 was deployed. To see the error
-     * delete this comment and run Flow. */
     props.style = [styles.slider, style];
 
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb,react_native_oss) This comment
-     * suppresses an error found when Flow v0.54 was deployed. To see the error
-     * delete this comment and run Flow. */
-    props.onValueChange =
-      onValueChange &&
-      ((event: Event) => {
-        let userEvent = true;
-        if (Platform.OS === 'android') {
-          // On Android there's a special flag telling us the user is
-          // dragging the slider.
-          userEvent = event.nativeEvent.fromUser;
-        }
-        onValueChange && userEvent && onValueChange(event.nativeEvent.value);
-      });
+    props.onValueChange = onValueChange && ((event: Event) => {
+      let userEvent = true;
+      if (Platform.OS === 'android') {
+        // On Android there's a special flag telling us the user is
+        // dragging the slider.
+        userEvent = event.nativeEvent.fromUser;
+      }
+      onValueChange && userEvent && onValueChange(event.nativeEvent.value);
+    });
 
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb,react_native_oss) This comment
-     * suppresses an error found when Flow v0.54 was deployed. To see the error
-     * delete this comment and run Flow. */
     props.onChange = props.onValueChange;
 
-    /* $FlowFixMe(>=0.54.0 site=react_native_fb,react_native_oss) This comment
-     * suppresses an error found when Flow v0.54 was deployed. To see the error
-     * delete this comment and run Flow. */
-    props.onSlidingComplete =
-      onSlidingComplete &&
-      ((event: Event) => {
-        onSlidingComplete && onSlidingComplete(event.nativeEvent.value);
-      });
+    props.onSlidingComplete = onSlidingComplete && ((event: Event) => {
+      onSlidingComplete && onSlidingComplete(event.nativeEvent.value);
+    });
 
-    return (
-      <RCTSlider
-        {...props}
-        enabled={!this.props.disabled}
-        onStartShouldSetResponder={() => true}
-        onResponderTerminationRequest={() => false}
-      />
-    );
-  },
+    return <RCTSlider
+      {...props}
+      enabled={!this.props.disabled}
+      onStartShouldSetResponder={() => true}
+      onResponderTerminationRequest={() => false}
+    />;
+  }
 });
 
 let styles;
@@ -311,9 +204,9 @@ if (Platform.OS === 'android') {
   options = {
     nativeOnly: {
       enabled: true,
-    },
+    }
   };
 }
 const RCTSlider = requireNativeComponent('RCTSlider', Slider, options);
 
-module.exports = ((Slider: any): Class<ReactNative.NativeComponent<Props>>);
+module.exports = Slider;

@@ -1,8 +1,10 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  */
 
 package com.facebook.react.modules.permissions;
@@ -13,6 +15,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Process;
 import android.util.SparseArray;
+
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -24,6 +27,7 @@ import com.facebook.react.bridge.WritableNativeMap;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.modules.core.PermissionAwareActivity;
 import com.facebook.react.modules.core.PermissionListener;
+
 import java.util.ArrayList;
 
 /**
@@ -112,7 +116,7 @@ public class PermissionsModule extends ReactContextBaseJavaModule implements Per
           @Override
           public void invoke(Object... args) {
             int[] results = (int[]) args[0];
-            if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
+            if (results[0] == PackageManager.PERMISSION_GRANTED) {
               promise.resolve(GRANTED);
             } else {
               PermissionAwareActivity activity = (PermissionAwareActivity) args[1];
@@ -171,7 +175,7 @@ public class PermissionsModule extends ReactContextBaseJavaModule implements Per
           PermissionAwareActivity activity = (PermissionAwareActivity) args[1];
           for (int j = 0; j < permissionsToCheck.size(); j++) {
             String permission = permissionsToCheck.get(j);
-            if (results.length > 0 && results[j] == PackageManager.PERMISSION_GRANTED) {
+            if (results[j] == PackageManager.PERMISSION_GRANTED) {
               grantedPermissions.putString(permission, GRANTED);
             } else {
               if (activity.shouldShowRequestPermissionRationale(permission)) {

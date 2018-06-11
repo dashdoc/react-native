@@ -1,43 +1,39 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @format
+ * @providesModule TabBarIOS
  * @flow
  */
-
 'use strict';
 
-const ColorPropType = require('ColorPropType');
-const React = require('React');
+var ColorPropType = require('ColorPropType');
+var React = require('React');
 const PropTypes = require('prop-types');
-const StyleSheet = require('StyleSheet');
-const TabBarItemIOS = require('TabBarItemIOS');
+var StyleSheet = require('StyleSheet');
+var TabBarItemIOS = require('TabBarItemIOS');
 const ViewPropTypes = require('ViewPropTypes');
 
-const requireNativeComponent = require('requireNativeComponent');
+var requireNativeComponent = require('requireNativeComponent');
 
-import type {DangerouslyImpreciseStyleProp} from 'StyleSheet';
-import type {ViewProps} from 'ViewPropTypes';
+class TabBarIOS extends React.Component {
+  props: {
+    style?: $FlowFixMe,
+    unselectedTintColor?: $FlowFixMe,
+    tintColor?: $FlowFixMe,
+    unselectedItemTintColor?: $FlowFixMe,
+    barTintColor?: $FlowFixMe,
+    translucent?: boolean,
+    itemPositioning?: 'fill' | 'center' | 'auto',
+  };
 
-type Props = $ReadOnly<{|
-  ...ViewProps,
-  style?: DangerouslyImpreciseStyleProp,
-  unselectedTintColor?: string,
-  tintColor?: string,
-  unselectedItemTintColor?: string,
-  barTintColor?: string,
-  barStyle?: 'default' | 'black',
-  translucent?: boolean,
-  itemPositioning?: 'fill' | 'center' | 'auto',
-  children: React.Node,
-|}>;
-
-class TabBarIOS extends React.Component<Props> {
   static Item = TabBarItemIOS;
 
+  // $FlowFixMe(>=0.41.0)
   static propTypes = {
     ...ViewPropTypes,
     style: ViewPropTypes.style,
@@ -57,12 +53,6 @@ class TabBarIOS extends React.Component<Props> {
      * Background color of the tab bar
      */
     barTintColor: ColorPropType,
-    /**
-     * The style of the tab bar. Supported values are 'default', 'black'.
-     * Use 'black' instead of setting `barTintColor` to black. This produces
-     * a tab bar with the native iOS style with higher translucency.
-     */
-    barStyle: PropTypes.oneOf(['default', 'black']),
     /**
      * A Boolean value that indicates whether the tab bar is translucent
      */
@@ -87,21 +77,22 @@ class TabBarIOS extends React.Component<Props> {
         unselectedItemTintColor={this.props.unselectedItemTintColor}
         tintColor={this.props.tintColor}
         barTintColor={this.props.barTintColor}
-        barStyle={this.props.barStyle}
         itemPositioning={this.props.itemPositioning}
         translucent={this.props.translucent !== false}>
-        {this.props.children}
+        {
+          // $FlowFixMe found when converting React.createClass to ES6
+          this.props.children}
       </RCTTabBar>
     );
   }
 }
 
-const styles = StyleSheet.create({
+var styles = StyleSheet.create({
   tabGroup: {
     flex: 1,
-  },
+  }
 });
 
-const RCTTabBar = requireNativeComponent('RCTTabBar', TabBarIOS);
+var RCTTabBar = requireNativeComponent('RCTTabBar', TabBarIOS);
 
 module.exports = TabBarIOS;

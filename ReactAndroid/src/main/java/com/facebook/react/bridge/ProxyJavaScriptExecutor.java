@@ -1,8 +1,10 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  */
 
 package com.facebook.react.bridge;
@@ -22,7 +24,7 @@ import com.facebook.proguard.annotations.DoNotStrip;
  */
 @DoNotStrip
 public class ProxyJavaScriptExecutor extends JavaScriptExecutor {
-  public static class Factory implements JavaScriptExecutorFactory {
+  public static class Factory implements JavaScriptExecutor.Factory {
     private final JavaJSExecutor.Factory mJavaJSExecutorFactory;
 
     public Factory(JavaJSExecutor.Factory javaJSExecutorFactory) {
@@ -57,11 +59,6 @@ public class ProxyJavaScriptExecutor extends JavaScriptExecutor {
       mJavaJSExecutor.close();
       mJavaJSExecutor = null;
     }
-  }
-
-  @Override
-  public String getName() {
-    return "ProxyJavaScriptExecutor";
   }
 
   private native static HybridData initHybrid(JavaJSExecutor executor);

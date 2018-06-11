@@ -1,8 +1,9 @@
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * All rights reserved.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  */
 
 package com.facebook.react.tests;
@@ -48,7 +49,7 @@ public class JSLocaleTest extends ReactIntegrationTestCase {
         getContext(),
         viewManagers,
         new UIImplementationProvider(),
-        0);
+        false);
     UiThreadUtil.runOnUiThread(
         new Runnable() {
           @Override
@@ -65,6 +66,7 @@ public class JSLocaleTest extends ReactIntegrationTestCase {
         .addNativeModule(new DeviceInfoModule(getContext()))
         .addNativeModule(new AppStateModule(getContext()))
         .addNativeModule(new FakeWebSocketModule())
+        .addJSModule(TestJSLocaleModule.class)
         .build();
   }
 

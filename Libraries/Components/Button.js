@@ -1,13 +1,14 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @format
+ * @providesModule Button
  * @flow
  */
-
 'use strict';
 
 const ColorPropType = require('ColorPropType');
@@ -37,9 +38,6 @@ const invariant = require('fbjs/lib/invariant');
  * Example usage:
  *
  * ```
- * import { Button } from 'react-native';
- * ...
- *
  * <Button
  *   onPress={onPressLearnMore}
  *   title="Learn More"
@@ -50,15 +48,17 @@ const invariant = require('fbjs/lib/invariant');
  *
  */
 
-class Button extends React.Component<{
-  title: string,
-  onPress: () => any,
-  color?: ?string,
-  hasTVPreferredFocus?: ?boolean,
-  accessibilityLabel?: ?string,
-  disabled?: ?boolean,
-  testID?: ?string,
-}> {
+class Button extends React.Component {
+
+  props: {
+    title: string,
+    onPress: () => any,
+    color?: ?string,
+    accessibilityLabel?: ?string,
+    disabled?: ?boolean,
+    testID?: ?string,
+  };
+
   static propTypes = {
     /**
      * Text to display inside the button
@@ -77,10 +77,6 @@ class Button extends React.Component<{
      */
     disabled: PropTypes.bool,
     /**
-     * TV preferred focus (see documentation for the View component).
-     */
-    hasTVPreferredFocus: PropTypes.bool,
-    /**
      * Handler to be called when the user taps the button
      */
     onPress: PropTypes.func.isRequired,
@@ -96,50 +92,51 @@ class Button extends React.Component<{
       color,
       onPress,
       title,
-      hasTVPreferredFocus,
       disabled,
       testID,
     } = this.props;
     const buttonStyles = [styles.button];
     const textStyles = [styles.text];
-    if (color) {
-      if (Platform.OS === 'ios') {
-        textStyles.push({color: color});
-      } else {
-        buttonStyles.push({backgroundColor: color});
-      }
+    const Touchable = Platform.OS === 'android' ? TouchableNativeFeedback : TouchableOpacity;
+    if (color && Platform.OS === 'ios') {
+      textStyles.push({color: color});
+    } else if (color) {
+      buttonStyles.push({backgroundColor: color});
     }
-    const accessibilityTraits = ['button'];
     if (disabled) {
       buttonStyles.push(styles.buttonDisabled);
       textStyles.push(styles.textDisabled);
-      accessibilityTraits.push('disabled');
     }
     invariant(
       typeof title === 'string',
       'The title prop of a Button must be a string',
     );
-    const formattedTitle =
-      Platform.OS === 'android' ? title.toUpperCase() : title;
-    const Touchable =
-      Platform.OS === 'android' ? TouchableNativeFeedback : TouchableOpacity;
+    const formattedTitle = Platform.OS === 'android' ? title.toUpperCase() : title;
+    const accessibilityTraits = ['button'];
+    if (disabled) {
+      accessibilityTraits.push('disabled');
+    }
     return (
       <Touchable
         accessibilityComponentType="button"
         accessibilityLabel={accessibilityLabel}
         accessibilityTraits={accessibilityTraits}
-        hasTVPreferredFocus={hasTVPreferredFocus}
         testID={testID}
         disabled={disabled}
         onPress={onPress}>
         <View style={buttonStyles}>
-          <Text style={textStyles} disabled={disabled}>
-            {formattedTitle}
-          </Text>
+          <Text style={textStyles} disabled={disabled}>{formattedTitle}</Text>
         </View>
       </Touchable>
     );
   }
+}
+
+// Material design blue from https://material.google.com/style/color.html#color-color-palette
+let defaultBlue = '#2196F3';
+if (Platform.OS === 'ios') {
+  // Measured default tintColor from iOS 10
+  defaultBlue = '#0C42FD';
 }
 
 const styles = StyleSheet.create({
@@ -147,22 +144,20 @@ const styles = StyleSheet.create({
     ios: {},
     android: {
       elevation: 4,
-      // Material design blue from https://material.google.com/style/color.html#color-color-palette
-      backgroundColor: '#2196F3',
+      backgroundColor: defaultBlue,
       borderRadius: 2,
     },
   }),
   text: Platform.select({
     ios: {
-      // iOS blue from https://developer.apple.com/ios/human-interface-guidelines/visual-design/color/
-      color: '#007AFF',
+      color: defaultBlue,
       textAlign: 'center',
       padding: 8,
       fontSize: 18,
     },
     android: {
-      color: 'white',
       textAlign: 'center',
+      color: 'white',
       padding: 8,
       fontWeight: '500',
     },
@@ -172,7 +167,7 @@ const styles = StyleSheet.create({
     android: {
       elevation: 0,
       backgroundColor: '#dfdfdf',
-    },
+    }
   }),
   textDisabled: Platform.select({
     ios: {
@@ -180,7 +175,7 @@ const styles = StyleSheet.create({
     },
     android: {
       color: '#a1a1a1',
-    },
+    }
   }),
 });
 

@@ -1,13 +1,15 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  */
 
 #import "RCTAssetsLibraryRequestHandler.h"
 
-#import <stdatomic.h>
+#import <libkern/OSAtomic.h>
 
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <MobileCoreServices/MobileCoreServices.h>
@@ -39,13 +41,13 @@ RCT_EXPORT_MODULE()
 - (id)sendRequest:(NSURLRequest *)request
      withDelegate:(id<RCTURLRequestDelegate>)delegate
 {
-  __block atomic_bool cancelled = ATOMIC_VAR_INIT(NO);
+  __block volatile uint32_t cancelled = 0;
   void (^cancellationBlock)(void) = ^{
-    atomic_store(&cancelled, YES);
+    OSAtomicOr32Barrier(1, &cancelled);
   };
 
   [[self assetsLibrary] assetForURL:request.URL resultBlock:^(ALAsset *asset) {
-    if (atomic_load(&cancelled)) {
+    if (cancelled) {
       return;
     }
 
@@ -89,7 +91,7 @@ RCT_EXPORT_MODULE()
       [delegate URLRequest:cancellationBlock didCompleteWithError:error];
     }
   } failureBlock:^(NSError *loadError) {
-    if (atomic_load(&cancelled)) {
+    if (cancelled) {
       return;
     }
     [delegate URLRequest:cancellationBlock didCompleteWithError:loadError];

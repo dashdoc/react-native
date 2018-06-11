@@ -1,8 +1,10 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  */
 
 #import "RCTLinkingManager.h"
@@ -11,14 +13,15 @@
 #import <React/RCTEventDispatcher.h>
 #import <React/RCTUtils.h>
 
-static NSString *const kOpenURLNotification = @"RCTOpenURLNotification";
+NSString *const RCTOpenURLNotification = @"RCTOpenURLNotification";
+
 
 static void postNotificationWithURL(NSURL *URL, id sender)
 {
   NSDictionary<NSString *, id> *payload = @{@"url": URL.absoluteString};
-  [[NSNotificationCenter defaultCenter] postNotificationName:kOpenURLNotification
-                                                      object:sender
-                                                    userInfo:payload];
+  [[NSNotificationCenter defaultCenter] postNotificationName:RCTOpenURLNotification
+                                                        object:sender
+                                                      userInfo:payload];
 }
 
 @implementation RCTLinkingManager
@@ -34,7 +37,7 @@ RCT_EXPORT_MODULE()
 {
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(handleOpenURLNotification:)
-                                               name:kOpenURLNotification
+                                               name:RCTOpenURLNotification
                                              object:nil];
 }
 
@@ -71,7 +74,7 @@ continueUserActivity:(NSUserActivity *)userActivity
 {
   if ([userActivity.activityType isEqualToString:NSUserActivityTypeBrowsingWeb]) {
     NSDictionary *payload = @{@"url": userActivity.webpageURL.absoluteString};
-    [[NSNotificationCenter defaultCenter] postNotificationName:kOpenURLNotification
+    [[NSNotificationCenter defaultCenter] postNotificationName:RCTOpenURLNotification
                                                         object:self
                                                       userInfo:payload];
   }

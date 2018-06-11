@@ -1,57 +1,50 @@
-// Copyright (c) 2004-present, Facebook, Inc.
-
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+// Copyright 2004-present Facebook. All Rights Reserved.
 
 package com.facebook.react;
 
-import static com.facebook.react.modules.systeminfo.AndroidInfoHelpers.getFriendlyDeviceName;
+import javax.annotation.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import android.app.Activity;
 import android.app.Application;
+
 import com.facebook.infer.annotation.Assertions;
-import com.facebook.react.bridge.JSIModulesProvider;
-import com.facebook.react.bridge.JSBundleLoader;
-import com.facebook.react.bridge.JSCJavaScriptExecutorFactory;
-import com.facebook.react.bridge.JavaScriptExecutorFactory;
 import com.facebook.react.bridge.NativeModuleCallExceptionHandler;
 import com.facebook.react.bridge.NotThreadSafeBridgeIdleDebugListener;
+import com.facebook.react.bridge.JSBundleLoader;
 import com.facebook.react.common.LifecycleState;
-import com.facebook.react.devsupport.RedBoxHandler;
-import com.facebook.react.devsupport.interfaces.DevBundleDownloadListener;
 import com.facebook.react.devsupport.interfaces.DevSupportManager;
+import com.facebook.react.devsupport.RedBoxHandler;
 import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler;
 import com.facebook.react.uimanager.UIImplementationProvider;
-import java.util.ArrayList;
-import java.util.List;
-import javax.annotation.Nullable;
 
 /**
  * Builder class for {@link ReactInstanceManager}
  */
 public class ReactInstanceManagerBuilder {
 
-  private final List<ReactPackage> mPackages = new ArrayList<>();
+  protected final List<ReactPackage> mPackages = new ArrayList<>();
 
-  private @Nullable String mJSBundleAssetUrl;
-  private @Nullable JSBundleLoader mJSBundleLoader;
-  private @Nullable String mJSMainModulePath;
-  private @Nullable NotThreadSafeBridgeIdleDebugListener mBridgeIdleDebugListener;
-  private @Nullable Application mApplication;
-  private boolean mUseDeveloperSupport;
-  private @Nullable LifecycleState mInitialLifecycleState;
-  private @Nullable UIImplementationProvider mUIImplementationProvider;
-  private @Nullable NativeModuleCallExceptionHandler mNativeModuleCallExceptionHandler;
-  private @Nullable Activity mCurrentActivity;
-  private @Nullable DefaultHardwareBackBtnHandler mDefaultHardwareBackBtnHandler;
-  private @Nullable RedBoxHandler mRedBoxHandler;
-  private boolean mLazyNativeModulesEnabled;
-  private boolean mLazyViewManagersEnabled;
-  private @Nullable DevBundleDownloadListener mDevBundleDownloadListener;
-  private @Nullable JavaScriptExecutorFactory mJavaScriptExecutorFactory;
-  private int mMinNumShakes = 1;
-  private int mMinTimeLeftInFrameForNonBatchedOperationMs = -1;
-  private @Nullable JSIModulesProvider mJSIModulesProvider;
+  protected @Nullable String mJSBundleAssetUrl;
+  protected @Nullable JSBundleLoader mJSBundleLoader;
+  protected @Nullable String mJSMainModuleName;
+  protected @Nullable NotThreadSafeBridgeIdleDebugListener mBridgeIdleDebugListener;
+  protected @Nullable Application mApplication;
+  protected boolean mUseDeveloperSupport;
+  protected @Nullable LifecycleState mInitialLifecycleState;
+  protected @Nullable UIImplementationProvider mUIImplementationProvider;
+  protected @Nullable NativeModuleCallExceptionHandler mNativeModuleCallExceptionHandler;
+  protected JSCConfig mJSCConfig = JSCConfig.EMPTY;
+  protected @Nullable Activity mCurrentActivity;
+  protected @Nullable DefaultHardwareBackBtnHandler mDefaultHardwareBackBtnHandler;
+  protected @Nullable RedBoxHandler mRedBoxHandler;
+  protected boolean mLazyNativeModulesEnabled;
+  protected boolean mLazyViewManagersEnabled;
+  protected boolean mSetupReactContextInBackground;
+  protected boolean mUseSeparateUIBackgroundThread;
+  protected int mMinNumShakes = 1;
 
   /* package protected */ ReactInstanceManagerBuilder() {
   }
@@ -63,21 +56,6 @@ public class ReactInstanceManagerBuilder {
   public ReactInstanceManagerBuilder setUIImplementationProvider(
     @Nullable UIImplementationProvider uiImplementationProvider) {
     mUIImplementationProvider = uiImplementationProvider;
-    return this;
-  }
-
-  public ReactInstanceManagerBuilder setJSIModulesProvider(
-    @Nullable JSIModulesProvider jsiModulesProvider) {
-    mJSIModulesProvider = jsiModulesProvider;
-    return this;
-  }
-
-  /**
-   * Factory for desired implementation of JavaScriptExecutor.
-   */
-  public ReactInstanceManagerBuilder setJavaScriptExecutorFactory(
-    @Nullable JavaScriptExecutorFactory javaScriptExecutorFactory) {
-    mJavaScriptExecutorFactory = javaScriptExecutorFactory;
     return this;
   }
 
@@ -107,7 +85,7 @@ public class ReactInstanceManagerBuilder {
 
   /**
    * Bundle loader to use when setting up JS environment. This supersedes
-   * prior invocations of {@link setJSBundleFile} and {@link setBundleAssetName}.
+   * prior invcations of {@link setJSBundleFile} and {@link setBundleAssetName}.
    *
    * Example: {@code JSBundleLoader.createFileLoader(application, bundleFile)}
    */
@@ -125,18 +103,13 @@ public class ReactInstanceManagerBuilder {
    * {@code "index.android"} or
    * {@code "subdirectory/index.android"}
    */
-  public ReactInstanceManagerBuilder setJSMainModulePath(String jsMainModulePath) {
-    mJSMainModulePath = jsMainModulePath;
+  public ReactInstanceManagerBuilder setJSMainModuleName(String jsMainModuleName) {
+    mJSMainModuleName = jsMainModuleName;
     return this;
   }
 
   public ReactInstanceManagerBuilder addPackage(ReactPackage reactPackage) {
     mPackages.add(reactPackage);
-    return this;
-  }
-
-  public ReactInstanceManagerBuilder addPackages(List<ReactPackage> reactPackages) {
-    mPackages.addAll(reactPackages);
     return this;
   }
 
@@ -196,6 +169,11 @@ public class ReactInstanceManagerBuilder {
     return this;
   }
 
+  public ReactInstanceManagerBuilder setJSCConfig(JSCConfig jscConfig) {
+    mJSCConfig = jscConfig;
+    return this;
+  }
+
   public ReactInstanceManagerBuilder setRedBoxHandler(@Nullable RedBoxHandler redBoxHandler) {
     mRedBoxHandler = redBoxHandler;
     return this;
@@ -211,20 +189,20 @@ public class ReactInstanceManagerBuilder {
     return this;
   }
 
-  public ReactInstanceManagerBuilder setDevBundleDownloadListener(
-    @Nullable DevBundleDownloadListener listener) {
-    mDevBundleDownloadListener = listener;
+  public ReactInstanceManagerBuilder setSetupReactContextInBackgroundEnabled(
+    boolean setupReactContextInBackground) {
+    mSetupReactContextInBackground = setupReactContextInBackground;
     return this;
+  }
+
+  public ReactInstanceManagerBuilder setUseSeparateUIBackgroundThread(
+    boolean useSeparateUIBackgroundThread) {
+   mUseSeparateUIBackgroundThread = useSeparateUIBackgroundThread;
+   return this;
   }
 
   public ReactInstanceManagerBuilder setMinNumShakes(int minNumShakes) {
     mMinNumShakes = minNumShakes;
-    return this;
-  }
-
-  public ReactInstanceManagerBuilder setMinTimeLeftInFrameForNonBatchedOperationMs(
-      int minTimeLeftInFrameForNonBatchedOperationMs) {
-    mMinTimeLeftInFrameForNonBatchedOperationMs = minTimeLeftInFrameForNonBatchedOperationMs;
     return this;
   }
 
@@ -235,7 +213,7 @@ public class ReactInstanceManagerBuilder {
    * <li> {@link #setApplication}
    * <li> {@link #setCurrentActivity} if the activity has already resumed
    * <li> {@link #setDefaultHardwareBackBtnHandler} if the activity has already resumed
-   * <li> {@link #setJSBundleFile} or {@link #setJSMainModulePath}
+   * <li> {@link #setJSBundleFile} or {@link #setJSMainModuleName}
    * </ul>
    */
   public ReactInstanceManager build() {
@@ -248,42 +226,34 @@ public class ReactInstanceManagerBuilder {
       "JS Bundle File or Asset URL has to be provided when dev support is disabled");
 
     Assertions.assertCondition(
-      mJSMainModulePath != null || mJSBundleAssetUrl != null || mJSBundleLoader != null,
-      "Either MainModulePath or JS Bundle File needs to be provided");
+      mJSMainModuleName != null || mJSBundleAssetUrl != null || mJSBundleLoader != null,
+      "Either MainModuleName or JS Bundle File needs to be provided");
 
     if (mUIImplementationProvider == null) {
       // create default UIImplementationProvider if the provided one is null.
       mUIImplementationProvider = new UIImplementationProvider();
     }
 
-    // We use the name of the device and the app for debugging & metrics
-    String appName = mApplication.getPackageName();
-    String deviceName = getFriendlyDeviceName();
-
     return new ReactInstanceManager(
-        mApplication,
-        mCurrentActivity,
-        mDefaultHardwareBackBtnHandler,
-        mJavaScriptExecutorFactory == null
-            ? new JSCJavaScriptExecutorFactory(appName, deviceName)
-            : mJavaScriptExecutorFactory,
-        (mJSBundleLoader == null && mJSBundleAssetUrl != null)
-            ? JSBundleLoader.createAssetLoader(
-                mApplication, mJSBundleAssetUrl, false /*Asynchronous*/)
-            : mJSBundleLoader,
-        mJSMainModulePath,
-        mPackages,
-        mUseDeveloperSupport,
-        mBridgeIdleDebugListener,
-        Assertions.assertNotNull(mInitialLifecycleState, "Initial lifecycle state was not set"),
-        mUIImplementationProvider,
-        mNativeModuleCallExceptionHandler,
-        mRedBoxHandler,
-        mLazyNativeModulesEnabled,
-        mLazyViewManagersEnabled,
-        mDevBundleDownloadListener,
-        mMinNumShakes,
-        mMinTimeLeftInFrameForNonBatchedOperationMs,
-        mJSIModulesProvider);
+      mApplication,
+      mCurrentActivity,
+      mDefaultHardwareBackBtnHandler,
+      (mJSBundleLoader == null && mJSBundleAssetUrl != null) ?
+        JSBundleLoader.createAssetLoader(mApplication, mJSBundleAssetUrl, false /*Asynchronous*/) :
+        mJSBundleLoader,
+      mJSMainModuleName,
+      mPackages,
+      mUseDeveloperSupport,
+      mBridgeIdleDebugListener,
+      Assertions.assertNotNull(mInitialLifecycleState, "Initial lifecycle state was not set"),
+      mUIImplementationProvider,
+      mNativeModuleCallExceptionHandler,
+      mJSCConfig,
+      mRedBoxHandler,
+      mLazyNativeModulesEnabled,
+      mLazyViewManagersEnabled,
+      mSetupReactContextInBackground,
+      mUseSeparateUIBackgroundThread,
+      mMinNumShakes);
   }
 }

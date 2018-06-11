@@ -1,44 +1,32 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
+ * @providesModule PickerIOS
  *
  * This is a controlled component version of RCTPickerIOS
- *
- * @format
  */
-
 'use strict';
 
-const NativeMethodsMixin = require('NativeMethodsMixin');
-const React = require('React');
-const ReactNative = require('ReactNative');
+var NativeMethodsMixin = require('NativeMethodsMixin');
+var React = require('React');
 const PropTypes = require('prop-types');
-const StyleSheet = require('StyleSheet');
-const StyleSheetPropType = require('StyleSheetPropType');
-const TextStylePropTypes = require('TextStylePropTypes');
-const View = require('View');
+var StyleSheet = require('StyleSheet');
+var StyleSheetPropType = require('StyleSheetPropType');
+var TextStylePropTypes = require('TextStylePropTypes');
+var View = require('View');
 const ViewPropTypes = require('ViewPropTypes');
-const processColor = require('processColor');
+var processColor = require('processColor');
 
-const createReactClass = require('create-react-class');
-const itemStylePropType = StyleSheetPropType(TextStylePropTypes);
-const requireNativeComponent = require('requireNativeComponent');
+var createReactClass = require('create-react-class');
+var itemStylePropType = StyleSheetPropType(TextStylePropTypes);
+var requireNativeComponent = require('requireNativeComponent');
 
-import type {ColorValue} from 'StyleSheetTypes';
-import type {ViewProps} from 'ViewPropTypes';
-
-type Props = $ReadOnly<{|
-  ...ViewProps,
-  color?: ?ColorValue,
-  label: string,
-  testID?: ?string,
-  value?: ?any,
-|}>;
-
-const PickerIOS = createReactClass({
+var PickerIOS = createReactClass({
   displayName: 'PickerIOS',
   mixins: [NativeMethodsMixin],
 
@@ -53,15 +41,15 @@ const PickerIOS = createReactClass({
     return this._stateFromProps(this.props);
   },
 
-  UNSAFE_componentWillReceiveProps: function(nextProps) {
+  componentWillReceiveProps: function(nextProps) {
     this.setState(this._stateFromProps(nextProps));
   },
 
   // Translate PickerIOS prop and children into stuff that RCTPickerIOS understands.
   _stateFromProps: function(props) {
-    let selectedIndex = 0;
-    const items = [];
-    React.Children.toArray(props.children).forEach(function(child, index) {
+    var selectedIndex = 0;
+    var items = [];
+    React.Children.toArray(props.children).forEach(function (child, index) {
       if (child.props.value === props.selectedValue) {
         selectedIndex = index;
       }
@@ -78,7 +66,7 @@ const PickerIOS = createReactClass({
     return (
       <View style={this.props.style}>
         <RCTPickerIOS
-          ref={picker => (this._picker = picker)}
+          ref={picker => this._picker = picker}
           style={[styles.pickerIOS, this.props.itemStyle]}
           items={this.state.items}
           selectedIndex={this.state.selectedIndex}
@@ -95,10 +83,7 @@ const PickerIOS = createReactClass({
       this.props.onChange(event);
     }
     if (this.props.onValueChange) {
-      this.props.onValueChange(
-        event.nativeEvent.newValue,
-        event.nativeEvent.newIndex,
-      );
+      this.props.onValueChange(event.nativeEvent.newValue, event.nativeEvent.newIndex);
     }
 
     // The picker is a controlled component. This means we expect the
@@ -107,24 +92,15 @@ const PickerIOS = createReactClass({
     // disallow/undo/mutate the selection of certain values. In other
     // words, the embedder of this component should be the source of
     // truth, not the native component.
-    if (
-      this._picker &&
-      this.state.selectedIndex !== event.nativeEvent.newIndex
-    ) {
+    if (this._picker && this.state.selectedIndex !== event.nativeEvent.newIndex) {
       this._picker.setNativeProps({
-        selectedIndex: this.state.selectedIndex,
+        selectedIndex: this.state.selectedIndex
       });
     }
   },
 });
 
-PickerIOS.Item = class extends React.Component<
-  $ReadOnly<{|
-    label: string,
-    value?: ?any,
-    color?: ?ColorValue,
-  |}>,
-> {
+PickerIOS.Item = class extends React.Component {
   static propTypes = {
     value: PropTypes.any, // string or integer basically
     label: PropTypes.string,
@@ -137,11 +113,7 @@ PickerIOS.Item = class extends React.Component<
   }
 };
 
-class TypedPickerIOS extends ReactNative.NativeComponent<Props> {
-  static Item = PickerIOS.Item;
-}
-
-const styles = StyleSheet.create({
+var styles = StyleSheet.create({
   pickerIOS: {
     // The picker will conform to whatever width is given, but we do
     // have to set the component's height explicitly on the
@@ -150,20 +122,16 @@ const styles = StyleSheet.create({
   },
 });
 
-const RCTPickerIOS = requireNativeComponent(
-  'RCTPicker',
-  {
-    propTypes: {
-      style: itemStylePropType,
-    },
+var RCTPickerIOS = requireNativeComponent('RCTPicker', {
+  propTypes: {
+    style: itemStylePropType,
   },
-  {
-    nativeOnly: {
-      items: true,
-      onChange: true,
-      selectedIndex: true,
-    },
+}, {
+  nativeOnly: {
+    items: true,
+    onChange: true,
+    selectedIndex: true,
   },
-);
+});
 
-module.exports = ((PickerIOS: any): Class<TypedPickerIOS>);
+module.exports = PickerIOS;

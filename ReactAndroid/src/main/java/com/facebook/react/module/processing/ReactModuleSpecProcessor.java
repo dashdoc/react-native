@@ -1,7 +1,4 @@
-// Copyright (c) 2004-present, Facebook, Inc.
-
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+// Copyright 2004-present Facebook. All Rights Reserved.
 
 package com.facebook.react.module.processing;
 
@@ -24,7 +21,6 @@ import javax.lang.model.util.Elements;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.stream.Stream;
 import java.util.HashMap;
 import java.util.List;
@@ -59,7 +55,6 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 @SupportedSourceVersion(SourceVersion.RELEASE_7)
 public class ReactModuleSpecProcessor extends AbstractProcessor {
 
-  private static final TypeName COLLECTIONS_TYPE = ParameterizedTypeName.get(Collections.class);
   private static final TypeName MAP_TYPE = ParameterizedTypeName.get(
     Map.class,
     Class.class,
@@ -93,7 +88,6 @@ public class ReactModuleSpecProcessor extends AbstractProcessor {
 
       TypeElement typeElement = (TypeElement) reactModuleListElement;
       ReactModuleList reactModuleList = typeElement.getAnnotation(ReactModuleList.class);
-
       if (reactModuleList == null) {
         continue;
       }
@@ -150,7 +144,7 @@ public class ReactModuleSpecProcessor extends AbstractProcessor {
     throws ReactModuleSpecException {
     CodeBlock.Builder builder = CodeBlock.builder();
     if (nativeModules == null || nativeModules.isEmpty()) {
-      builder.addStatement("return $T.emptyMap()", COLLECTIONS_TYPE);
+      builder.addStatement("return Collections.emptyMap()");
     } else {
       builder.addStatement("$T map = new $T()", MAP_TYPE, INSTANTIATED_MAP_TYPE);
 
@@ -173,13 +167,8 @@ public class ReactModuleSpecProcessor extends AbstractProcessor {
         List<? extends Element> elements = typeElement.getEnclosedElements();
         boolean hasConstants = false;
         if (elements != null) {
-          hasConstants =
-              elements
-                  .stream()
-                  .filter(element -> element.getKind() == ElementKind.METHOD)
-                  .map(Element::getSimpleName)
-                  .anyMatch(
-                      name -> name.contentEquals("getConstants") || name.contentEquals("getTypedExportedConstants"));
+          hasConstants = elements.stream()
+            .anyMatch((Element m) -> m.getKind() == ElementKind.METHOD && m.getSimpleName().contentEquals("getConstants"));
         }
 
         String valueString = new StringBuilder()

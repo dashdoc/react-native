@@ -1,8 +1,5 @@
-// Copyright (c) 2004-present, Facebook, Inc.
-
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
-
+// Copyright 2004-present Facebook. All Rights Reserved.
+  
 #include "JSCHelpers.h"
 
 #ifdef WITH_FBSYSTRACE
@@ -11,41 +8,13 @@
 
 #include <glog/logging.h>
 
-#if WITH_FBJSCEXTENSIONS
-#include <pthread.h>
-#endif
-
 #include "JavaScriptCore.h"
 #include "Value.h"
-#include <privatedata/PrivateDataBase.h>
-
-#if WITH_FBJSCEXTENSIONS
-#undef ASSERT
-#undef WTF_EXPORT_PRIVATE
-
-#include <JavaScriptCore/config.h>
-#include <wtf/WTFThreadData.h>
-
-#undef TRUE
-#undef FALSE
-#endif
 
 namespace facebook {
 namespace react {
 
 namespace {
-
-class JSFunctionPrivateData : public PrivateDataBase {
- public:
-  explicit JSFunctionPrivateData(JSFunction&& function) : jsFunction_{std::move(function)} {}
-
-  JSFunction& getJSFunction() {
-    return jsFunction_;
-  }
-
-private:
-  JSFunction jsFunction_;
-};
 
 JSValueRef functionCaller(
     JSContextRef ctx,
@@ -55,34 +24,29 @@ JSValueRef functionCaller(
     const JSValueRef arguments[],
     JSValueRef* exception) {
   const bool isCustomJSC = isCustomJSCPtr(ctx);
-  auto* privateData = PrivateDataBase::cast<JSFunctionPrivateData>(
-    JSC_JSObjectGetPrivate(isCustomJSC, function));
-  return (privateData->getJSFunction())(ctx, thisObject, argumentCount, arguments);
+  auto* f = static_cast<JSFunction*>(JSC_JSObjectGetPrivate(isCustomJSC, function));
+  return (*f)(ctx, thisObject, argumentCount, arguments);
 }
 
 JSClassRef createFuncClass(JSContextRef ctx) {
   JSClassDefinition definition = kJSClassDefinitionEmpty;
   definition.attributes |= kJSClassAttributeNoAutomaticPrototype;
-
   // Need to duplicate the two different finalizer blocks, since there's no way
   // for it to capture this static information.
-  const bool isCustomJSC = isCustomJSCPtr(ctx);
-  if (isCustomJSC) {
+  if (isCustomJSCPtr(ctx)) {
     definition.finalize = [](JSObjectRef object) {
-      auto* privateData = PrivateDataBase::cast<JSFunctionPrivateData>(
-        JSC_JSObjectGetPrivate(true, object));
-      delete privateData;
+      auto* function = static_cast<JSFunction*>(JSC_JSObjectGetPrivate(true, object));
+      delete function;
     };
   } else {
     definition.finalize = [](JSObjectRef object) {
-      auto* privateData = PrivateDataBase::cast<JSFunctionPrivateData>(
-        JSC_JSObjectGetPrivate(false, object));
-      delete privateData;
+      auto* function = static_cast<JSFunction*>(JSC_JSObjectGetPrivate(false, object));
+      delete function;
     };
   }
   definition.callAsFunction = exceptionWrapMethod<&functionCaller>();
 
-  return JSC_JSClassCreate(isCustomJSC, &definition);
+  return JSC_JSClassCreate(ctx, &definition);
 }
 
 JSObjectRef makeFunction(
@@ -96,8 +60,8 @@ JSObjectRef makeFunction(
   }
 
   // dealloc in kClassDef.finalize
-  JSFunctionPrivateData *functionDataPtr = new JSFunctionPrivateData(std::move(function));
-  auto functionObject = Object(ctx, JSC_JSObjectMake(ctx, *classRef, functionDataPtr));
+  JSFunction *functionPtr = new JSFunction(std::move(function));
+  auto functionObject = Object(ctx, JSC_JSObjectMake(ctx, *classRef, functionPtr));
   functionObject.setProperty("name", Value(ctx, name));
   return functionObject;
 }
@@ -110,14 +74,14 @@ void JSException::buildMessage(JSContextRef ctx, JSValueRef exn, JSStringRef sou
     msgBuilder << errorMsg << ": ";
   }
 
-  Object exnObject = Value(ctx, exn).asObject();
-  Value exnMessage = exnObject.getProperty("message");
-  msgBuilder << (exnMessage.isString() ? exnMessage : (Value)exnObject).toString().str();
+  Value exnValue = Value(ctx, exn);
+  msgBuilder << exnValue.toString().str();
 
   // The null/empty-ness of source tells us if the JS came from a
   // file/resource, or was a constructed statement.  The location
   // info will include that source, if any.
   std::string locationInfo = sourceURL != nullptr ? String::ref(ctx, sourceURL).str() : "";
+  Object exnObject = exnValue.asObject();
   auto line = exnObject.getProperty("line");
   if (line != nullptr && line.isNumber()) {
     if (locationInfo.empty() && line.asInteger() != 1) {
@@ -148,11 +112,6 @@ void JSException::buildMessage(JSContextRef ctx, JSValueRef exn, JSStringRef sou
   }
 }
 
-namespace ExceptionHandling {
-
-PlatformErrorExtractor platformErrorExtractor;
-
-}
 
 JSObjectRef makeFunction(
     JSContextRef ctx,
@@ -228,62 +187,21 @@ JSValueRef evaluateSourceCode(JSContextRef context, JSSourceCodeRef source, JSSt
 }
 #endif
 
-JSContextLock::JSContextLock(JSGlobalContextRef ctx) noexcept
-#if WITH_FBJSCEXTENSIONS
-  : ctx_(ctx),
-   globalLock_(PTHREAD_MUTEX_INITIALIZER)
-   {
-  WTFThreadData& threadData = wtfThreadData();
-
-  // Code below is responsible for acquiring locks. It should execute
-  // atomically, thus none of the functions invoked from now on are allowed to
-  // throw an exception
-  try {
-    if (!threadData.isDebuggerThread()) {
-      CHECK(0 == pthread_mutex_lock(&globalLock_));
-    }
-    JSLock(ctx_);
-  } catch (...) {
-    abort();
-  }
-}
-#else
-{}
-#endif
-
-
-JSContextLock::~JSContextLock() noexcept {
-  #if WITH_FBJSCEXTENSIONS
-  WTFThreadData& threadData = wtfThreadData();
-
-  JSUnlock(ctx_);
-  if (!threadData.isDebuggerThread()) {
-    CHECK(0 == pthread_mutex_unlock(&globalLock_));
-  }
-  #endif
-}
-
-
 JSValueRef translatePendingCppExceptionToJSError(JSContextRef ctx, const char *exceptionLocation) {
+  std::ostringstream msg;
   try {
     throw;
   } catch (const std::bad_alloc& ex) {
     throw; // We probably shouldn't try to handle this in JS
   } catch (const std::exception& ex) {
-    if (ExceptionHandling::platformErrorExtractor) {
-      auto extractedEror = ExceptionHandling::platformErrorExtractor(ex, exceptionLocation);
-      if (extractedEror.message.length() > 0) {
-        return Value::makeError(ctx, extractedEror.message.c_str(), extractedEror.stack.c_str());
-      }
-    }
-    auto msg = folly::to<std::string>("C++ exception in '", exceptionLocation, "'\n\n", ex.what());
-    return Value::makeError(ctx, msg.c_str());
+    msg << "C++ Exception in '" << exceptionLocation << "': " << ex.what();
+    return Value::makeError(ctx, msg.str().c_str());
   } catch (const char* ex) {
-    auto msg = folly::to<std::string>("C++ exception (thrown as a char*) in '", exceptionLocation, "'\n\n", ex);
-    return Value::makeError(ctx, msg.c_str());
+    msg << "C++ Exception (thrown as a char*) in '" << exceptionLocation << "': " << ex;
+    return Value::makeError(ctx, msg.str().c_str());
   } catch (...) {
-    auto msg = folly::to<std::string>("Unknown C++ exception in '", exceptionLocation, "'");
-    return Value::makeError(ctx, msg.c_str());
+    msg << "Unknown C++ Exception in '" << exceptionLocation << "'";
+    return Value::makeError(ctx, msg.str().c_str());
   }
 }
 
@@ -292,7 +210,7 @@ JSValueRef translatePendingCppExceptionToJSError(JSContextRef ctx, JSObjectRef j
     auto functionName = Object(ctx, jsFunctionCause).getProperty("name").toString().str();
     return translatePendingCppExceptionToJSError(ctx, functionName.c_str());
   } catch (...) {
-    return Value::makeError(ctx, "Failed to translate native exception");
+    return Value::makeError(ctx, "Failed to get function name while handling exception");
   }
 }
 

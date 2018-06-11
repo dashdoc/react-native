@@ -1,36 +1,41 @@
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
+ * All rights reserved.
  *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
+ * This source code is licensed under the BSD-style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
  *
- * @format
+ * @providesModule DrawerLayoutAndroid
  */
-
 'use strict';
 
-const ColorPropType = require('ColorPropType');
-const NativeMethodsMixin = require('NativeMethodsMixin');
-const Platform = require('Platform');
-const React = require('React');
-const PropTypes = require('prop-types');
-const ReactNative = require('ReactNative');
-const StatusBar = require('StatusBar');
-const StyleSheet = require('StyleSheet');
-const UIManager = require('UIManager');
-const View = require('View');
-const ViewPropTypes = require('ViewPropTypes');
+var ColorPropType = require('ColorPropType');
+var NativeMethodsMixin = require('NativeMethodsMixin');
+var Platform = require('Platform');
+var React = require('React');
+var PropTypes = require('prop-types');
+var ReactNative = require('ReactNative');
+var StatusBar = require('StatusBar');
+var StyleSheet = require('StyleSheet');
+var UIManager = require('UIManager');
+var View = require('View');
+var ViewPropTypes = require('ViewPropTypes');
 
-const DrawerConsts = UIManager.AndroidDrawerLayout.Constants;
+var DrawerConsts = UIManager.AndroidDrawerLayout.Constants;
 
-const createReactClass = require('create-react-class');
-const dismissKeyboard = require('dismissKeyboard');
-const requireNativeComponent = require('requireNativeComponent');
+var createReactClass = require('create-react-class');
+var dismissKeyboard = require('dismissKeyboard');
+var requireNativeComponent = require('requireNativeComponent');
 
-const RK_DRAWER_REF = 'drawerlayout';
-const INNERVIEW_REF = 'innerView';
+var RK_DRAWER_REF = 'drawerlayout';
+var INNERVIEW_REF = 'innerView';
 
-const DRAWER_STATES = ['Idle', 'Dragging', 'Settling'];
+var DRAWER_STATES = [
+  'Idle',
+  'Dragging',
+  'Settling',
+];
 
 /**
  * React component that wraps the platform `DrawerLayout` (Android only). The
@@ -63,7 +68,7 @@ const DRAWER_STATES = ['Idle', 'Dragging', 'Settling'];
  * },
  * ```
  */
-const DrawerLayoutAndroid = createReactClass({
+var DrawerLayoutAndroid = createReactClass({
   displayName: 'DrawerLayoutAndroid',
   statics: {
     positions: DrawerConsts.DrawerPosition,
@@ -97,7 +102,7 @@ const DrawerLayoutAndroid = createReactClass({
      */
     drawerPosition: PropTypes.oneOf([
       DrawerConsts.DrawerPosition.Left,
-      DrawerConsts.DrawerPosition.Right,
+      DrawerConsts.DrawerPosition.Right
     ]),
     /**
      * Specifies the width of the drawer, more precisely the width of the view that be pulled in
@@ -114,7 +119,7 @@ const DrawerLayoutAndroid = createReactClass({
     drawerLockMode: PropTypes.oneOf([
       'unlocked',
       'locked-closed',
-      'locked-open',
+      'locked-open'
     ]),
     /**
      * Function called whenever there is an interaction with the navigation view.
@@ -165,42 +170,40 @@ const DrawerLayoutAndroid = createReactClass({
     return this.refs[INNERVIEW_REF].getInnerViewNode();
   },
 
+  componentDidMount: function() {
+    this._updateStatusBarBackground();
+  },
+
+  componentDidReceiveProps: function() {
+    this._updateStatusBarBackground();
+  },
+
   render: function() {
-    const drawStatusBar =
-      Platform.Version >= 21 && this.props.statusBarBackgroundColor;
-    const drawerViewWrapper = (
+    var drawStatusBar = Platform.Version >= 21 && this.props.statusBarBackgroundColor;
+    var drawerViewWrapper =
       <View
         style={[
           styles.drawerSubview,
-          {
-            width: this.props.drawerWidth,
-            backgroundColor: this.props.drawerBackgroundColor,
-          },
+          {width: this.props.drawerWidth, backgroundColor: this.props.drawerBackgroundColor}
         ]}
         collapsable={false}>
         {this.props.renderNavigationView()}
         {drawStatusBar && <View style={styles.drawerStatusBar} />}
-      </View>
-    );
-    const childrenWrapper = (
+      </View>;
+    var childrenWrapper =
       <View ref={INNERVIEW_REF} style={styles.mainSubview} collapsable={false}>
-        {drawStatusBar && (
-          <StatusBar
-            translucent
-            backgroundColor={this.props.statusBarBackgroundColor}
-          />
-        )}
-        {drawStatusBar && (
-          <View
-            style={[
-              styles.statusBar,
-              {backgroundColor: this.props.statusBarBackgroundColor},
-            ]}
-          />
-        )}
+        {drawStatusBar &&
+        <StatusBar
+          translucent
+          backgroundColor={this.state.statusBarBackgroundColor}
+        />}
+        {drawStatusBar &&
+        <View style={[
+          styles.statusBar,
+          {backgroundColor: this.props.statusBarBackgroundColor}
+        ]} />}
         {this.props.children}
-      </View>
-    );
+      </View>;
     return (
       <AndroidDrawerLayout
         {...this.props}
@@ -242,9 +245,7 @@ const DrawerLayoutAndroid = createReactClass({
 
   _onDrawerStateChanged: function(event) {
     if (this.props.onDrawerStateChanged) {
-      this.props.onDrawerStateChanged(
-        DRAWER_STATES[event.nativeEvent.drawerState],
-      );
+      this.props.onDrawerStateChanged(DRAWER_STATES[event.nativeEvent.drawerState]);
     }
   },
 
@@ -255,7 +256,7 @@ const DrawerLayoutAndroid = createReactClass({
     UIManager.dispatchViewManagerCommand(
       this._getDrawerLayoutHandle(),
       UIManager.AndroidDrawerLayout.Commands.openDrawer,
-      null,
+      null
     );
   },
 
@@ -266,31 +267,33 @@ const DrawerLayoutAndroid = createReactClass({
     UIManager.dispatchViewManagerCommand(
       this._getDrawerLayoutHandle(),
       UIManager.AndroidDrawerLayout.Commands.closeDrawer,
-      null,
+      null
     );
   },
-  /**
-   * Closing and opening example
-   * Note: To access the drawer you have to give it a ref. Refs do not work on stateless components
-   * render () {
-   *   this.openDrawer = () => {
-   *     this.refs.DRAWER.openDrawer()
-   *   }
-   *   this.closeDrawer = () => {
-   *     this.refs.DRAWER.closeDrawer()
-   *   }
-   *   return (
-   *     <DrawerLayoutAndroid ref={'DRAWER'}>
-   *     </DrawerLayoutAndroid>
-   *   )
-   * }
-   */
+
   _getDrawerLayoutHandle: function() {
     return ReactNative.findNodeHandle(this.refs[RK_DRAWER_REF]);
   },
+
+  // Update the StatusBar component background color one frame after creating the
+  // status bar background View to avoid a white flicker that happens because
+  // the StatusBar background becomes transparent before the status bar View
+  // from this component has rendered.
+  _updateStatusBarBackground: function() {
+    if (Platform.Version >= 21 && this.props.statusBarBackgroundColor) {
+      // Check if the value is not already transparent to avoid an extra render.
+      if (this.state.statusBarBackgroundColor !== 'transparent') {
+        requestAnimationFrame(() => {
+          this.setState({statusBarBackgroundColor: 'transparent'});
+        });
+      }
+    } else {
+      this.setState({statusBarBackgroundColor: undefined});
+    }
+  },
 });
 
-const styles = StyleSheet.create({
+var styles = StyleSheet.create({
   base: {
     flex: 1,
     elevation: 16,
@@ -321,9 +324,6 @@ const styles = StyleSheet.create({
 });
 
 // The View that contains both the actual drawer and the main view
-const AndroidDrawerLayout = requireNativeComponent(
-  'AndroidDrawerLayout',
-  DrawerLayoutAndroid,
-);
+var AndroidDrawerLayout = requireNativeComponent('AndroidDrawerLayout', DrawerLayoutAndroid);
 
 module.exports = DrawerLayoutAndroid;

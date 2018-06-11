@@ -1,24 +1,19 @@
-// Copyright (c) 2004-present, Facebook, Inc.
+// Copyright 2004-present Facebook. All Rights Reserved.
 
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+#ifdef WITH_JSC_EXTRA_TRACING
 
 #include "JSCLegacyTracing.h"
-
-#if defined(WITH_JSC_EXTRA_TRACING)
 
 #include <fbsystrace.h>
 #include <JavaScriptCore/API/JSProfilerPrivate.h>
 #include <jschelpers/JSCHelpers.h>
 #include <jschelpers/Value.h>
 
+#include "JSCTracing.h"
+
 static const char *ENABLED_FBSYSTRACE_PROFILE_NAME = "__fbsystrace__";
 
 using namespace facebook::react;
-
-static int64_t int64FromJSValue(JSContextRef ctx, JSValueRef value, JSValueRef* exception) {
-  return static_cast<int64_t>(JSC_JSValueToNumber(ctx, value, exception));
-}
 
 static JSValueRef nativeTraceBeginLegacy(
     JSContextRef ctx,
@@ -28,13 +23,18 @@ static JSValueRef nativeTraceBeginLegacy(
     const JSValueRef arguments[],
     JSValueRef* exception) {
   if (FBSYSTRACE_LIKELY(argumentCount >= 1)) {
-    uint64_t tag = int64FromJSValue(ctx, arguments[0], exception);
+    uint64_t tag = tracingTagFromJSValue(ctx, arguments[0], exception);
     if (!fbsystrace_is_tracing(tag)) {
       return Value::makeUndefined(ctx);
     }
   }
 
-  JSStartProfiling(ctx, String(ctx, ENABLED_FBSYSTRACE_PROFILE_NAME), true);
+  String title(ctx, ENABLED_FBSYSTRACE_PROFILE_NAME);
+  #if WITH_REACT_INTERNAL_SETTINGS
+  JSStartProfiling(ctx, title, true);
+  #else
+  JSStartProfiling(ctx, title);
+  #endif
 
   return Value::makeUndefined(ctx);
 }
@@ -47,27 +47,26 @@ static JSValueRef nativeTraceEndLegacy(
     const JSValueRef arguments[],
     JSValueRef* exception) {
   if (FBSYSTRACE_LIKELY(argumentCount >= 1)) {
-    uint64_t tag = int64FromJSValue(ctx, arguments[0], exception);
+    uint64_t tag = tracingTagFromJSValue(ctx, arguments[0], exception);
     if (!fbsystrace_is_tracing(tag)) {
       return Value::makeUndefined(ctx);
     }
   }
 
-  JSEndProfiling(ctx, String(ctx, ENABLED_FBSYSTRACE_PROFILE_NAME));
+  String title(ctx, ENABLED_FBSYSTRACE_PROFILE_NAME);
+  JSEndProfiling(ctx, title);
 
   return Value::makeUndefined(ctx);
 }
-
-#endif
 
 namespace facebook {
 namespace react {
 
 void addNativeTracingLegacyHooks(JSGlobalContextRef ctx) {
-#if defined(WITH_JSC_EXTRA_TRACING)
   installGlobalFunction(ctx, "nativeTraceBeginLegacy", nativeTraceBeginLegacy);
   installGlobalFunction(ctx, "nativeTraceEndLegacy", nativeTraceEndLegacy);
-#endif
 }
 
 } }
+
+#endif
